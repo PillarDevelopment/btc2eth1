@@ -3,68 +3,81 @@ pragma solidity 0.5.0;
 import "./ERC20Detailed.sol";
 
 /**
- * @title Meta Transaction
+ * @title ERC20HashPay hash pay using back step hash onions.
  * @dev 
  */
 
-contract ERC20MetaTransaction is ERC20Detailed {
+contract ERC20HashPay is ERC20Detailed {    
+        
+    mapping(address => bytes32) private lastHash;
 
-    mapping(address => uint) private nonces;
+    bytes32 private stream;
+    bytes32 private settled;
+        
+    event AddStreamEvent(bytes32 prevHash, bytes32 txHash, bytes32 lastHash);
+    event Transfer(address from, address to, uint256 amount);
 
-    function getNonce(address _from) public view returns (uint256 nonce) {
-        return nonces[_from];
+    function addLatest(bytes32 _latestHash) public {
+        lastHash[msg.sender] = _latestHash;
     }
 
-    function transferMetaTx(
+    // _txHash = keccak256(<from>, <to>, <amount>, <prevHash>, <secret>)
+    function addStream(bytes32 _txHash) public {
+        bytes32 lastStream = stream;
+        // if _txHash is not correct, sender must not reveal secret. payer is safu :) 
+        // after settlement, payer can re-submit the correct tx to the relayer
+        stream = keccak256(abi.encodePacked(lastStream, _txHash)); 
+        emit AddStreamEvent(lastStream, _txHash, stream);
+    }
+
+    function settle(
+        address[] memory _from, 
+        address[] memory _to, 
+        uint256[] memory _amount, 
+        bytes32[] memory _prevHashOrTxhash, 
+        bytes32[] memory _secret
+    ) public returns (bool) {
+        bytes32 lastSettled = settled;
+        for (uint256 i=0; i <= _from.length - 1; i++) {
+            if (_secret[i] == 0x0) {
+                lastSettled = keccak256(abi.encodePacked(lastSettled, _prevHashOrTxhash[i]));
+            } else {
+                bytes32 txHash = keccak256(abi.encodePacked(
+                    _from[i], 
+                    _to[i], 
+                    _amount[i], 
+                    _prevHashOrTxhash[i], 
+                    _secret[i]
+                ));
+                // create stream onions.
+                lastSettled = keccak256(abi.encodePacked(lastSettled, txHash));
+                // if txHash is correct, _prevHashOrTxhash is available to pay net payment.
+                // to protect re pay attack, lastHash will update in this cycles.
+                if (lastHash[msg.sender] == keccak256(abi.encodePacked(_prevHashOrTxhash[i], _secret[i]))) {
+                    lastHash[msg.sender] = _prevHashOrTxhash[i]; 
+                    _transfer(_from[i], _to[i], _amount[i]);
+                    emit Transfer(_from[i], _to[i], _amount[i]);
+                }
+            }
+        }
+        if (stream != lastSettled) {
+            revert();
+        }
+        settled = lastSettled;
+        return true;
+    }
+    
+    function getHash(
         address _from, 
-        address _to,  
-        uint256 _amount, 
-        uint256 _nonce, 
-        bytes memory _sig
-    ) internal returns (bool) {
-        require(nonces[_from]+1 == _nonce, "nonce out of order");
-
-        bytes32 hash = keccak256(
-            abi.encodePacked("\x19Ethereum Signed Message:\n32",
-            _from,
-            _to,
-            _amount,
-            _nonce
-        ));
-        
-        address signer = recover(hash, _sig);
-
-        require(signer == _from, "signer != _from");
-
-        nonces[_from] = nonces[_from].add(1);
-        
-        _transfer(_from, _to, _amount);
-
+        address _to, 
+        uint256 _amount,
+        bytes32 _prev, 
+        bytes32 _secret
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(_from, _to, _amount, _prev, _secret));
     }
-
-    function recover(bytes32 hash, bytes memory sig) internal pure returns (address) {
-        if (sig.length != 65) {
-            return (address(0));
-        }
-
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        assembly {
-            r := mload(add(sig, 32))
-            s := mload(add(sig, 64))
-            v := byte(0, mload(add(sig, 96)))
-        }
-        
-        // Version of signature should be 27 or 28, but 0 and 1 are also possible versions
-        if (v < 27) {
-            v += 27;
-        }
-        
-        if (v != 27 && v != 28) {
-            return (address(0));
-        } else {
-            return ecrecover(hash, v, r, s);
-        }
+    
+    function getHash(bytes32 _prev, bytes32 _secret) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(_prev, _secret));
     }
 }

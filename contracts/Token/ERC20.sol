@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "./IERC20WithMeta.sol";
+import "./IERC20.sol";
 import "../Utils/SafeMath.sol";
 
 /**
@@ -8,15 +8,15 @@ import "../Utils/SafeMath.sol";
  *
  * @dev Implementation of the basic standard token.
  * https://eips.ethereum.org/EIPS/eip-20
+ * Using OpenZepplein https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC20/ERC20.sol
  * Originally based on code by FirstBlood:
  * https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
- *
  * This implementation emits additional Approval events, allowing applications to reconstruct the allowance status for
  * all accounts just by listening to said events. Note that this isn't required by the specification, and other
  * compliant implementations may not do it.
  */
 
-contract ERC20 is IERC20WithMeta {
+contract ERC20 is IERC20 {
 
     using SafeMath for uint256;
 
