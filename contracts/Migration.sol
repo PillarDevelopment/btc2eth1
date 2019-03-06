@@ -1,0 +1,31 @@
+
+pragma solidity 0.5.0;
+
+/**
+ * @title Migrations
+ * @dev 
+ */
+
+contract Migrations {
+    address public owner;
+    uint256 public lastCompletedMigration;
+
+    modifier restricted() {
+        if (msg.sender == owner) {
+            _;
+        }
+    }
+
+    constructor() public {
+        owner = msg.sender;
+    }
+
+    function setCompleted(uint256 completed) public restricted {
+        lastCompletedMigration = completed;
+    }
+
+    function upgrade(address newAddress) public restricted {
+        Migrations upgraded = Migrations(newAddress);
+        upgraded.setCompleted(lastCompletedMigration);
+    }
+}

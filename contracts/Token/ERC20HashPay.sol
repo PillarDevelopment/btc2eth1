@@ -13,9 +13,16 @@ contract ERC20HashPay is ERC20Detailed {
 
     bytes32 private stream;
     bytes32 private settled;
+
+    address public relayer;
         
     event AddStreamEvent(bytes32 prevHash, bytes32 txHash, bytes32 lastHash);
     event Transfer(address from, address to, uint256 amount);
+
+    constructor (string memory name, string memory symbol, uint8 decimals) public 
+        ERC20Detailed(name, symbol, decimals) {
+        relayer = msg.sender;
+    }
 
     function addLatest(bytes32 _latestHash) public {
         lastHash[msg.sender] = _latestHash;

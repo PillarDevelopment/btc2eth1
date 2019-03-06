@@ -33,7 +33,7 @@ contract ERC20SimpleMetaTransaction is ERC20Detailed {
         uint256 _nonce, 
         bytes memory _sig
     ) public returns (bool) {
-        require(nonces[_from]+1 == _nonce, "nonce out of order");
+        require(nonces[_from].add(1) == _nonce, "nonce out of order");
 
         bytes32 hash = keccak256(abi.encodePacked(
             _from,
