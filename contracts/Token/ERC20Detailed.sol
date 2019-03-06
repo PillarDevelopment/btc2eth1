@@ -11,6 +11,7 @@ import "./ERC20.sol";
  */
 
 contract ERC20Detailed is IERC20Detailed, ERC20 {
+    
     string private _name;
     string private _symbol;
     uint8 private _decimals;

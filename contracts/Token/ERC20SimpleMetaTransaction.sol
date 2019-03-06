@@ -49,6 +49,7 @@ contract ERC20SimpleMetaTransaction is ERC20Detailed {
         require(relayers[msg.sender].gasPrice != 0x0, "gas price is not set");
 
         uint256 gasPrice = relayers[msg.sender].gasPrice;
+        
         uint256 tokenPerWei = relayers[msg.sender].tokenPerWei;
 
         uint256 tokenFees = tokenPerWei * gasPrice * 50000; // should be changed.
