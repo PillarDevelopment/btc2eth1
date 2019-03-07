@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/SwingbyProtocol/btc2eth1/issues"
   },
-  "homepage": "https://github.com/SwingbyProtocol/btc2eth1#readme"
+  "homepage": "https://github.com/SwingbyProtocol/btc2eth1#readme",
+  "dependencies": {
+    "keccak256": "^1.0.0"
+  }
 }

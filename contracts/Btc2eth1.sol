@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "./Token/IERC20Detailed.sol";
+import "./Token/Token.sol";
 import "./Utils/SigUtil.sol";
 
 
@@ -11,7 +11,7 @@ contract Btc2eth1 {
     mapping(bytes32 => bytes32) matchState;
     mapping(uint256 => bytes32) wshs; // sha256 hash
     
-    IERC20Detailed private token;
+    Token private token;
 
     modifier isValidStakes(uint256 _amount) {
         // token isLocked
@@ -25,7 +25,7 @@ contract Btc2eth1 {
     }
 
     constructor(address _token) public {
-        token = IERC20Detailed(_token);
+        token = Token(_token);
     }
     
     // join witness yourself

@@ -1,15 +1,16 @@
 pragma solidity 0.5.0;
 
-import "./ERC20Detailed.sol";
 import "../Utils/SigUtil.sol";
+import "../Utils/SafeMath.sol";
 
 /**
- * @title ERC20SimpleMetaTransaction
+ * @title ERC20SimpleMetaTx
  * @dev 
  */
 
-contract ERC20SimpleMetaTransaction is ERC20Detailed {
-    
+contract ERC20SimpleMetaTx {
+    using SafeMath for uint256;
+
     struct GasReceipt {
         uint256 gasPrice;
         uint256 tokenPerWei;
@@ -49,10 +50,10 @@ contract ERC20SimpleMetaTransaction is ERC20Detailed {
         require(relayers[msg.sender].gasPrice != 0x0, "gas price is not set");
 
         uint256 gasPrice = relayers[msg.sender].gasPrice;
-        
+
         uint256 tokenPerWei = relayers[msg.sender].tokenPerWei;
 
-        uint256 tokenFees = tokenPerWei * gasPrice * 50000; // should be changed.
+        uint256 tokenFees = tokenPerWei.mul(gasPrice).mul(50000); // should be changed.
 
         nonces[_from] = nonces[_from].add(1);
         
@@ -64,6 +65,8 @@ contract ERC20SimpleMetaTransaction is ERC20Detailed {
     function getNonce(address _from) public view returns (uint256 nonce) {
         return nonces[_from];
     }
+
+    function _transfer(address _from, address _to, uint256 _amount) internal;
 
     
 }

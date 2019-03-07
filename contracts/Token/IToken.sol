@@ -1,12 +1,12 @@
 pragma solidity 0.5.0;
 
 /**
- * @title IERC20Detailed interface
+ * @title IToken interface
  * @dev see https://eips.ethereum.org/EIPS/eip-20
  */
 /* interface */  
 
-interface IERC20Detailed { 
+interface IToken { 
    
     function transfer(address to, uint256 value) external returns (bool);
 
@@ -15,7 +15,7 @@ interface IERC20Detailed {
     function transferFrom(address from, address to, uint256 value) external returns (bool);
 
     function totalSupply() external view returns (uint256);
-
+    
     function balanceOf(address who) external view returns (uint256);
 
     function allowance(address owner, address spender) external view returns (uint256);
@@ -23,8 +23,10 @@ interface IERC20Detailed {
     function name() external view returns (string memory);
 
     function symbol() external view returns (string memory);
-    
+
     function decimals() external view returns (uint8);
+
+
 
     event Transfer(address indexed from, address indexed to, uint256 value);
 
