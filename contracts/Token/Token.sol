@@ -20,7 +20,6 @@ contract Token is ERC20SimpleMetaTx, ERC20Base {
         _decimals = decimals;
         setOwner(msg.sender);
         _mint(msg.sender, 14000);
-
     }
 
     function transferMetaTx(
