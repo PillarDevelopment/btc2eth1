@@ -1,10 +1,12 @@
-const ERC20HashPay = artifacts.require('./ERC20HashPay.sol');
+const Token = artifacts.require('./Token.sol');
 const ethutil = require('ethereumjs-util')
 const crypto = require('crypto')
 
-contract('ERC20HashPay', function (accounts) {
+contract('Token', function (accounts) {
     it("should assert true", async function (done) {
-        const hashpay = await ERC20HashPay.new("TestToken", "TST", 18);
+        hashpay = await Token.new();
+
+        const mint = await hashpay.init("Test token", "TKG", 18);
 
         const payer = accounts[0]
         console.log(`payer = ${payer} contract = ${hashpay.address}`)
@@ -13,63 +15,108 @@ contract('ERC20HashPay', function (accounts) {
 
         let onions = createHashOnion(secrets)
 
-        let last = onions.pop()
+        let one = onions.pop()
 
-
-        let store = await hashpay.addLatest('0x' + last.lastHash, {
+        let stored = await hashpay.addLatest('0x' + one.lastHash, {
             from: payer
         })
-        console.log(`stored lasthash = ${payer} lastHash = ${last.lastHash}`)
+        console.log(`stored lasthash = ${payer} lastHash = ${one.lastHash}`)
 
         let latest = await hashpay.getLatest.call(payer)
 
-        console.log(`getLatest(payer) = ${latest} prev = ${last.prev} hash = ${last.lastHash} secret = ${last.secret}`)
+        console.log(`getLatest(payer) = ${latest} prev = ${one.prev} hash = ${one.lastHash} secret = ${one.secret}`)
 
-        let prevHash = last.prev
 
-        let prevSecret = last.secret
+        payers = []
+        receivers = []
+        amounts = []
+        prevs = []
+        secretlists = []
+
+        let tx1 = await createTx(one, payer, accounts[2], 300)
+
+        console.log("1", "prev", one.prev, one.secret)
 
         let two = onions.pop()
 
-        let hash = createTxHash(
-            payer,
-            accounts[1],
-            ethutil.bufferToHex(ethutil.setLengthLeft(300, 32)),
-            "0x" + prevHash,
-            "0x" + prevSecret
-        )
+        let tx2 = await createTx(two, payer, accounts[1], 400)
 
-        let hash2 = createTxHash(
-            payer,
-            accounts[1],
-            ethutil.bufferToHex(ethutil.setLengthLeft(300, 32)),
-            "0x" + two.prev,
-            "0x" + two.secret
-        )        
-        console.log(hash, hash2)
-        // from relayer
-        let attachTx = await hashpay.addStream('0x' + hash)
+        let three = onions.pop()
 
-        let attachTx2 = await hashpay.addStream('0x' + hash2)
+        //let tx3 = await createTx(three, payer, accounts[3], 200)
 
-        let old = await hashpay.getStream.call()
+        console.log("2", "prev", two.prev, two.secret)
 
-        // add stream
-        let stream = await hashpay.getStream.call()
+        pushTx(payer, accounts[2], 300, '0x' + one.prev, '0x' + one.secret)
 
-        console.log(`Attached Transaction attachTx: ${hash} stream = ${stream} prev = ${old}`)
+        pushTx(payer, accounts[1], 400, '0x' + two.prev, '0x' + two.secret)
 
-        let tranfer = await hashpay.settle(
-            [payer, payer],
-            [accounts[1], accounts[1]],
-            [300,300],
-            ['0x' + prevHash, '0x' + two.prev],
-            ['0x' + prevSecret, '0x' + two.secret]
-        )
+        //pushTx(payer, accounts[3], 200, '0x' + three.prev, '0x' + three.secret)
 
+        let newStream1 = await hashpay.getStream()
+
+        console.log(`
+            getStream, ${newStream1}
+        `)
+
+        let balance = await hashpay.balanceOf(accounts[0])
+
+        console.log(balance.toNumber())
+
+        let settled = await hashpay.getSettled()
+
+        console.log('settled', settled, receivers)
+        let tranfer = await hashpay.settle(payers, receivers, amounts, prevs, secretlists, {
+            gas: 400000
+        })
         console.log(tranfer)
-        //done();
+
+        let newStream = await hashpay.getStream()
+
+        console.log(`
+            newStream, ${newStream}
+        `)
+        let latest2 = await hashpay.getLatest.call(payer)
+
+        tranfer.logs.forEach((log) => {
+            console.log("lastsettled", log.args.lastSettled)
+        })
+
+        let settled2 = await hashpay.getSettled()
+        console.log(`
+            settled2, ${settled2}
+        `)
+        done();
     });
+
+    function pushTx(payer, to, amount, prev, secret) {
+        payers.push(payer)
+        receivers.push(to)
+        amounts.push(amount)
+        prevs.push(prev)
+        secretlists.push(secret)
+    }
+
+    function createTx(onion, payer, to, amount) {
+        return new Promise(async (resolve, reject) => {
+            let hash = createTxHash(
+                payer,
+                to,
+                ethutil.bufferToHex(ethutil.setLengthLeft(amount, 32)),
+                "0x" + onion.prev,
+                "0x" + onion.secret
+            )
+            let attachTx = await hashpay.addStream('0x' + hash)
+            let stream = await hashpay.getStream.call()
+            return resolve({
+                hash: hash,
+                prev: onion.prev,
+                secret: onion.secret,
+                stream: stream
+            });
+        })
+
+    }
 
     function createSecret(count) {
         let array = []
@@ -102,7 +149,7 @@ contract('ERC20HashPay', function (accounts) {
         let amount = _amount.slice(2)
         let encoded = Buffer.from(String(from + to + amount + _prev.slice(2) + _secret.slice(2)), 'hex')
         let hash = ethutil.keccak256(encoded).toString('hex')
-        console.log(_from, _to, _amount, _prev, _secret, encoded.toString('hex'))
+        //console.log(_from, _to, _amount, _prev, _secret, encoded.toString('hex'))
         //console.log(`hash = ${hash}`)
         return hash
     }

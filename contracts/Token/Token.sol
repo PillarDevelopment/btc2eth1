@@ -22,7 +22,7 @@ contract Token is ERC20PayHash, ERC20SimpleMetaTx, ERC20Base {
         _name = name;
         _symbol = symbol;
         _decimals = decimals;
-        _mint(msg.sender, 4000);
+        _mint(msg.sender, 14000);
     }
 
     function name() public view returns (string memory) {

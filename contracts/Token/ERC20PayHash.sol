@@ -12,14 +12,14 @@ contract ERC20PayHash {
     bytes32 private stream;
     bytes32 private settled;
     
-    event AddSecretHashEvent(address sender, bytes32 latest);
+    event UpdateSecretHash(address sender, bytes32 latest);
     event AddStreamEvent(bytes32 prevHash, bytes32 txHash, bytes32 lastHash);
-    event Transfer(address from, address to, uint256 amount);
+    event PayHashTransfer(address from, address to, uint256 amount, bytes32 lastSettled);
 
     function addLatest(bytes32 _latestHash) public {
         require(lastHash[msg.sender] == 0x0);
         lastHash[msg.sender] = _latestHash;
-        emit AddSecretHashEvent(msg.sender, _latestHash);
+        emit UpdateSecretHash(msg.sender, _latestHash);
     }
 
     // _txHash = keccak256(<from>, <to>, <amount>, <prevHash>, <secret>)
@@ -37,6 +37,10 @@ contract ERC20PayHash {
 
     function getLatest(address _user) public view returns (bytes32) {
         return lastHash[_user];
+    }
+
+    function getSettled() public view returns (bytes32) {
+        return settled;
     }
 
     function settle(
@@ -62,11 +66,12 @@ contract ERC20PayHash {
                 lastSettled = keccak256(abi.encodePacked(lastSettled, txHash));
                 // if txHash is correct, _prevHashOrTxhash is available to pay net payment.
                 // to protect re pay attack, lastHash will update in this cycles.
-                if (lastHash[_from[i]] == keccak256(abi.encodePacked(_prevHashOrTxhash[i], _secret[i]))) {
-                    lastHash[_from[i]] = _prevHashOrTxhash[i]; 
-                    //_transfer(_from[i], _to[i], _amount[i]);
-                    emit Transfer(_from[i], _to[i], _amount[i]);
-                }
+                require(lastHash[_from[i]] == keccak256(abi.encodePacked(_prevHashOrTxhash[i], _secret[i])), "lastHash is not match");
+                
+                lastHash[_from[i]] = _prevHashOrTxhash[i]; 
+                _transfer(_from[i], _to[i], _amount[i]);
+                //emit UpdateSecretHash(_from[i], lastHash[_from[i]]);
+                emit PayHashTransfer(_from[i], _to[i], _amount[i], lastSettled);
             }
         }
         if (stream != lastSettled) {
@@ -89,7 +94,7 @@ contract ERC20PayHash {
     function getHash(bytes32 _prev, bytes32 _secret) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(_prev, _secret));
     }
-    
+
     function _transfer(address _from, address _to, uint256 _amount) internal;
 
 }

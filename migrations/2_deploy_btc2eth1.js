@@ -11,7 +11,7 @@ module.exports = function (deployer, net, accounts) {
         instance = await Token.deployed()
         const mint = await instance.init("Test token", "TKG", 18);
 
-        const transfer = await instance.transfer(accounts[2], 3000);
+        const transfer = await instance.transfer(accounts[2], 122);
         console.log(mint.logs[0], transfer.logs[0])
     });
 
