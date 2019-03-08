@@ -9,7 +9,7 @@ import "./ITokensRecipient.sol";
  * @dev 
  */
 
-contract ERC20SimpleMetaTx is ITokensRecipient {
+contract ERC20SimpleMetaTx {
     using SafeMath for uint256;
 
     struct GasReceipt {

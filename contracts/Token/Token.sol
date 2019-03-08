@@ -1,17 +1,14 @@
 pragma solidity 0.5.0;
 
-import "./ERC20PayHash.sol";
 import "./ERC20SimpleMetaTx.sol";
 import "./ERC20Base.sol";
 
 /**
- * @title ERC20Detailed token
- * @dev The decimals are only for visualization purposes.
- * All the operations are done using the smallest and indivisible token unit,
- * just as on Ethereum all the operations are done in wei.
+ * @title Token token
+ * @dev 
  */
 
-contract Token is ERC20PayHash, ERC20SimpleMetaTx, ERC20Base { 
+contract Token is ERC20SimpleMetaTx, ERC20Base { 
 
     string private _name;
     string private _symbol;
