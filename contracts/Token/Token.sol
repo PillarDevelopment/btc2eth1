@@ -14,12 +14,24 @@ contract Token is ERC20SimpleMetaTx, ERC20Base {
     string private _symbol;
     uint8  private _decimals;
 
-    function init(string memory name, string memory symbol, uint8 decimals) public {
-        require(_decimals == 0x0);
+    constructor(string memory name, string memory symbol, uint8 decimals) public {
         _name = name;
         _symbol = symbol;
         _decimals = decimals;
+        setOwner(msg.sender);
         _mint(msg.sender, 14000);
+
+    }
+
+    function transferMetaTx(
+        address _from, 
+        address _to,  
+        uint256 _amount, 
+        uint256 _nonce,
+        bool    _isContract,
+        bytes memory _sig
+    ) public notPaused returns (bool) {
+        return super.transferMetaTx(_from, _to, _amount, _nonce, _isContract, _sig);
     }
 
     function name() public view returns (string memory) {

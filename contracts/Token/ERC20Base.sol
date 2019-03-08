@@ -1,6 +1,7 @@
 pragma solidity 0.5.0;
 
 import "./ERC20.sol";
+import "./Role.sol";
 
 /**
  * @title Standard ERC20 token
@@ -19,27 +20,30 @@ import "./ERC20.sol";
  * @dev ERC20Base logic
  */
 
-contract ERC20Base is ERC20 {
+contract ERC20Base is ERC20, Role {
 
-    address private owner;
-    /**
-     * @dev Function to mint tokens
-     * @param _to The address that will receive the minted tokens.
-     * @param _amount The amount of tokens to mint.
-     * @return A boolean that indicates if the operation was successful.
-     */
-
-    function mint(address _to, uint256 _amount) public returns (bool) {
-        if (owner == address(0x0)) {
-            owner = msg.sender;
-        } 
-        require(msg.sender == owner);
-        
-        _mint(_to, _amount);
-        return true;
+    function transfer(address to, uint256 value) public notPaused returns (bool) {
+        return super.transfer(to, value);
     }
 
-    function getOwner() public view returns (address) {
-        return owner;
+    function transferFrom(address from, address to, uint256 value) public notPaused returns (bool) {
+        return super.transferFrom(from, to, value);
+    }
+
+    function approve(address spender, uint256 value) public notPaused returns (bool) {
+        return super.approve(spender, value);
+    }
+
+    function increaseAllowance(address spender, uint addedValue) public notPaused returns (bool success) {
+        return super.increaseAllowance(spender, addedValue);
+    }
+
+    function decreaseAllowance(address spender, uint subtractedValue) public notPaused returns (bool success) {
+        return super.decreaseAllowance(spender, subtractedValue);
+    }
+
+    function mint(address _to, uint256 _amount) public notPaused onlyOwner returns (bool) {        
+        _mint(_to, _amount);
+        return true;
     }
 }

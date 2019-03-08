@@ -36,6 +36,7 @@ contract ERC20SimpleMetaTx {
         bool    _isContract,
         bytes memory _sig
     ) public returns (bool) {
+
         require(nonces[_from].add(1) == _nonce, "nonce out of order");
 
         require(relayers[msg.sender].gasPrice != 0x0, "gas price is not set");
