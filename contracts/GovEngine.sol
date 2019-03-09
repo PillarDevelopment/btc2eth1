@@ -21,9 +21,15 @@ contract GovEngine is ITokensRecipient {
         stakes[msg.sender] = stakes[msg.sender].add(_amount);
     }
 
-    function onTokenReceived(address _operator, address _sender, uint256 _amount) public {
-        require(msg.sender == _operator);
+    function onTokenReceived(address _token, address _sender, uint256 _amount) public {
+        require(msg.sender == address(gov));
+        require(_token == address(gov));
         stakes[_sender] = stakes[_sender].add(_amount);
+    }
+
+    function transferOut() public {
+        uint256 amount = stakes[msg.sender];
+        stakes[msg.sender] = stakes[msg.sender].sub(amount);
     }
 
 
