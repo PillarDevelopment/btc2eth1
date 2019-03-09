@@ -26,6 +26,10 @@ contract ERC20 is IERC20 {
 
     uint256 private _totalSupply;
 
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
     /**
      * @dev Total number of tokens in existence
      */

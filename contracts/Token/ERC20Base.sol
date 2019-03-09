@@ -1,7 +1,7 @@
 pragma solidity 0.5.0;
 
 import "./ERC20.sol";
-import "./Role.sol";
+import "../Utils/Role.sol";
 
 /**
  * @title Standard ERC20 token

@@ -17,6 +17,8 @@ contract ERC20MetaTx is Constant {
 
     uint256 public sendGasCost = 20000;
 
+    event ExecutionFailed(bytes32 txHash);
+
     function transferMetaTx(
         address _from, 
         address _to,  
@@ -40,18 +42,16 @@ contract ERC20MetaTx is Constant {
         // need to provide same gasPrice as requested by signer
         require(tx.gasprice == _inputs[0], "gasPrice != signer gasPrice"); 
         
-        bytes32 txHash = SigUtil.prefixed(keccak256(abi.encodePacked(
-            SWINGBY_TX_TYPEHASH,
+        bytes32 txHash = SigUtil.prefixed(getTransactionHash(
             _from,
             _to,
-            _amount,
-            _nonce,
-            _inputs[0],
-            _inputs[1],
-            _inputs[2],
-            _relayer
-        )));
-        
+            _amount, 
+            _nonce, 
+            _inputs, 
+            _relayer, 
+            _tokenReceiver
+        ));
+
         address signer = SigUtil.recover(txHash, _sig);
 
         require(signer == _from, "signer != _from");
@@ -65,8 +65,35 @@ contract ERC20MetaTx is Constant {
         uint256 tokenFees = ((initialGas + sendGasCost) - gasleft()) * _inputs[0] * _inputs[2]; 
         _transfer(_from, _tokenReceiver, tokenFees);   
     }
+
+    function getTransactionHash(
+        address _from, 
+        address _to,  
+        uint256 _amount, 
+        uint256 _nonce,
+        uint256[3] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _gasTokenPerWei,
+        address _relayer,
+        address _tokenReceiver
+    )
+        public
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(
+            SWINGBY_TX_TYPEHASH,
+            _from,
+            _to,
+            _amount,
+            _nonce,
+            _inputs[0],
+            _inputs[1],
+            _inputs[2],
+            _relayer,
+            _tokenReceiver
+        ));
+    }
     
-    function getNonce(address _from) public view returns (uint256 nonce) {
+    function getNonce(address _from) public view returns (uint256) {
         return nonces[_from];
     }
 

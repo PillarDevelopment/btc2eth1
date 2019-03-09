@@ -14,12 +14,12 @@ contract Token is ERC20MetaTx, ERC20Base {
     string private _symbol;
     uint8  private _decimals;
 
-    constructor(string memory name, string memory symbol, uint8 decimals) public {
+    constructor(string memory name, string memory symbol, uint8 decimals, uint256 _value) public {
         _name = name;
         _symbol = symbol;
         _decimals = decimals;
         setOwner(msg.sender);
-        _mint(msg.sender, 14000);
+        _mint(msg.sender, _value);
     }
 
     // override
