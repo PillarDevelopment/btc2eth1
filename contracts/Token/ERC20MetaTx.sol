@@ -22,9 +22,8 @@ contract ERC20MetaTx is Constant {
     function transferMetaTx(
         address _from, 
         address _to,  
-        uint256 _amount, 
-        uint256 _nonce,
-        uint256[3] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _gasTokenPerWei,
+        uint256 _amount,  
+        uint256[4] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _gasTokenPerWei, 3 => _nonce
         address _relayer,
         address _tokenReceiver,
         bytes memory _sig
@@ -35,7 +34,7 @@ contract ERC20MetaTx is Constant {
         require(_relayer == address(0) || _relayer == msg.sender, "wrong relayer");
         // need to give at least as much gas as requested by signer + extra to perform the call
         require(initialGas > _inputs[1] + sendGasCost, "not enought gas given");
-        require(nonces[_from].add(1) == _nonce, "nonce out of order");
+        require(nonces[_from].add(1) == _inputs[3], "nonce out of order");
         // safeGas = gaslimit + sendGasCost * gasprice * _gasToenPerWei 
         uint maxFees = sendGasCost.add(_inputs[1]).mul(_inputs[0]).mul(_inputs[2]);
         require(balanceOf(_from) >= _amount.add(maxFees), "_from not enough balance");
@@ -45,8 +44,7 @@ contract ERC20MetaTx is Constant {
         bytes32 txHash = SigUtil.prefixed(getTransactionHash(
             _from,
             _to,
-            _amount, 
-            _nonce, 
+            _amount,  
             _inputs, 
             _relayer, 
             _tokenReceiver
@@ -56,9 +54,10 @@ contract ERC20MetaTx is Constant {
 
         require(signer == _from, "signer != _from");
 
+        bool success;
         if (isContract(_to)) {
             // function should be return bool (not throw)
-            bool success = ITokensRecipient(_to).onTokenReceived(address(this), _from, _amount);
+            success = ITokensRecipient(_to).onTokenReceived(address(this), _from, _amount);
             if (success) {
                 _transfer(_from, _to, _amount);
             } else {
@@ -76,8 +75,7 @@ contract ERC20MetaTx is Constant {
         address _from, 
         address _to,  
         uint256 _amount, 
-        uint256 _nonce,
-        uint256[3] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _gasTokenPerWei,
+        uint256[4] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _gasTokenPerWei, 3 => _nonce
         address _relayer,
         address _tokenReceiver
     )
@@ -90,10 +88,10 @@ contract ERC20MetaTx is Constant {
             _from,
             _to,
             _amount,
-            _nonce,
             _inputs[0],
             _inputs[1],
             _inputs[2],
+            _inputs[3],
             _relayer,
             _tokenReceiver
         ));

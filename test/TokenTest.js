@@ -54,8 +54,7 @@ contract('Token', async (accounts) => {
             from,
             to,
             amount,
-            nonce,
-            [gasPrice, gasLimit, gasTokenPerWei],
+            [gasPrice, gasLimit, gasTokenPerWei, nonce],
             relayer,
             tokenReceiver
         );
@@ -71,8 +70,7 @@ contract('Token', async (accounts) => {
             from,
             to,
             amount,
-            nonce,
-            [gasPrice, gasLimit, gasTokenPerWei],
+            [gasPrice, gasLimit, gasTokenPerWei, nonce],
             relayer,
             tokenReceiver,
             sig, {

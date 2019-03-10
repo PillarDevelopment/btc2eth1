@@ -27,13 +27,12 @@ contract Token is ERC20MetaTx, ERC20Base {
         address _from, 
         address _to,  
         uint256 _amount, 
-        uint256 _nonce,
-        uint256[3] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _gasTokenPerWei,
+        uint256[4] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _gasTokenPerWei, 3 => _nonce
         address _relayer,
         address _tokenReceiver,
         bytes memory _sig
     ) public notPaused returns (bool) {
-        return super.transferMetaTx(_from, _to, _amount, _nonce, _inputs, _relayer, _tokenReceiver, _sig);
+        return super.transferMetaTx(_from, _to, _amount, _inputs, _relayer, _tokenReceiver, _sig);
     }
     
     /**
