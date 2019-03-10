@@ -56,10 +56,16 @@ contract ERC20MetaTx is Constant {
 
         require(signer == _from, "signer != _from");
 
-        _transfer(_from, _to, _amount);
-
         if (isContract(_to)) {
-            ITokensRecipient(_to).onTokenReceived(address(this), _from, _amount);
+            // function should be return bool (not throw)
+            bool success = ITokensRecipient(_to).onTokenReceived(address(this), _from, _amount);
+            if (success) {
+                _transfer(_from, _to, _amount);
+            } else {
+                emit ExecutionFailed(txHash);
+            }
+        } else {
+            _transfer(_from, _to, _amount);
         }
         // calculate _gasPrice * _gasTokenPerWei
         uint256 tokenFees = ((initialGas + sendGasCost) - gasleft()) * _inputs[0] * _inputs[2]; 
