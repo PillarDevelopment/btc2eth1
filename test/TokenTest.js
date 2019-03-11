@@ -164,4 +164,30 @@ contract('Token', async (accounts) => {
             assert.equal(err, "Error: Returned error: VM Exception while processing transaction: revert")
         });
     })
+    it('token mint', async () => {
+        let decimals = 18
+        let mintValue = web3.utils.toWei(new BN('40000'), 'ether')
+        let token = await Token.new("Test token", "TKG", decimals, mintValue)
+
+        let from = accounts[0];
+        let amount = web3.utils.toWei(new BN('20'), 'ether')
+
+        let balanceFrom = await token.balanceOf(from);
+
+        assert.equal(balanceFrom.toString(), mintValue.toString());
+
+        await token.mint(from, amount, {
+            from: from
+        });
+
+        await token.mint(from, amount, {
+            from: accounts[2]
+        }).catch((err) => {
+            assert.equal(err, "Error: Returned error: VM Exception while processing transaction: revert")
+        });
+    
+        let updateBalanceFrom = await token.balanceOf(from);
+
+        assert.equal(balanceFrom.add(amount).toString(), updateBalanceFrom.toString());
+    });
 })
