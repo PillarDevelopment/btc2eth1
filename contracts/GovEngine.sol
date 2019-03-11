@@ -9,7 +9,8 @@ contract GovEngine is ITokensRecipient {
     using SafeMath for uint256;
 
     mapping(address => uint256) private stakes; 
-    mapping(address => bool) private locked;
+    mapping(address => bool)    private locked;
+
     address[] private voted;
 
     mapping(address => bool) private lenderConsortium;
@@ -18,8 +19,7 @@ contract GovEngine is ITokensRecipient {
     bytes32 private proposal; // only support single proposal style
     uint256 private period;
     uint256 private score;
-    uint256 private duration;
-    uint256 private minStakeBalance = 40000;
+    uint256 private minStakeBalance;
     uint256 private threshold;
 
     IToken private gov;
@@ -27,6 +27,7 @@ contract GovEngine is ITokensRecipient {
     constructor(address _gov) public {
         gov = IToken(_gov);
         threshold = gov.totalSupply();
+        minStakeBalance = 40000;
     }
 
     //ITokensRecipient callback
@@ -41,7 +42,7 @@ contract GovEngine is ITokensRecipient {
         return true;
     }
 
-    function depositToken(uint256 _amount) public {
+    function deposit(uint256 _amount) public {
         gov.transferFrom(msg.sender, address(this), _amount);
         stakes[msg.sender] = stakes[msg.sender].add(_amount);
     }
@@ -60,16 +61,18 @@ contract GovEngine is ITokensRecipient {
     function submitProposal(bool _addOrSub, bool _wOrl, address _who, uint256 _period) public returns (bool) {
         require(proposal == 0x0, "proposal is submitted");
         require(isValidStakes(msg.sender, minStakeBalance));
+        require(isValidStakes(_who, minStakeBalance));
         require(isFree(msg.sender));
+        require(isFree(_who));
         proposal = keccak256(abi.encodePacked(_addOrSub, _wOrl, _who, _period, msg.sender));
-
         doLock(msg.sender);
+        doLock(_who);
         score = threshold; // init vote score min totalsuppy of tokens.
         period = _period;
     }
 
     function vote(bool _vote) public {
-        require(proposal != 0x0, "proposal is not 0x0");
+        require(proposal != 0x0, "proposal is not saved");
         require(isValidStakes(msg.sender, minStakeBalance), "voter insfuffient balances");
         require(!isVoted(msg.sender), "msg.sender already submitted");
         if (_vote) {
@@ -89,23 +92,25 @@ contract GovEngine is ITokensRecipient {
     ) public returns (bool) {
         bytes32 hash = keccak256(abi.encodePacked(_joinOrLeft, _wOrl, _who, _period, _submitter));
         require(hash == proposal, "proposal hash is not correct");
+        bool success;        
         if (period <= block.timestamp) {
-            return false;
+            return success = false;
         }
         // vote success
-        bool success;
         if (score > threshold) { // agreed
-            if (_wOrl) {
-                if (_joinOrLeft) {
-                    require(joinWitnessConsotium(_who));
+            if (_joinOrLeft) {
+                if (_wOrl) {
+                    witnessConsortium[_who] = true;
                 } else {
-                    require(leftWitnessConsotium(_who));
+                    lenderConsortium[_who] = true;                   
                 }
             } else {
-                if (_joinOrLeft) {
-                    require(joinLenderConsotium(_who));
+                if (_wOrl) {
+                    witnessConsortium[_who] = false;
+                    doUnlock(_who);
                 } else {
-                    require(leftLenderConsotium(_who));
+                    lenderConsortium[_who] = false;              
+                    doUnlock(_who);             
                 }
             }
             success = true;
@@ -119,14 +124,16 @@ contract GovEngine is ITokensRecipient {
         return success;
     }
 
+    function balanceOf(address _who) public view returns (uint256) {
+        return stakes[_who];
+    }
+
     function isValidLenderConsortium(address _who) public view returns (bool) {
-        if (isValidStakes(_who, 500000)) {
-            if (lenderConsortium[_who]) {
-                return true;
-            }
-            return false;
-        }
-        return false;
+        return lenderConsortium[_who];
+    }
+
+    function isValidWitnessConsortium(address _who) public view returns (bool) {
+        return witnessConsortium[_who];
     }
 
     function isVoted(address _who) internal view returns (bool) {
@@ -151,38 +158,6 @@ contract GovEngine is ITokensRecipient {
 
     function doUnlock(address _who) internal {
         locked[_who] = false;
-    }
-
-    function joinLenderConsotium(address _who) internal returns (bool) {
-        if (isValidStakes(_who, minStakeBalance)) {
-            doLock(_who);
-            lenderConsortium[_who] = true;
-        }
-        return false;
-    }
-
-    function leftLenderConsotium(address _who) internal returns (bool) {
-        if (isValidStakes(_who, minStakeBalance)) {
-            doUnlock(_who);
-            lenderConsortium[_who] = false;
-        }
-        return false;
-    }
-
-    function joinWitnessConsotium(address _who) internal returns (bool) {
-        if (isValidStakes(_who, minStakeBalance)) {
-            doLock(_who);
-            witnessConsortium[_who] = true;
-        }
-        return false;
-    }
-
-    function leftWitnessConsotium(address _who) internal returns (bool) {
-        if (isValidStakes(_who, minStakeBalance)) {
-            doUnlock(_who);
-            witnessConsortium[_who] = false;
-        }
-        return false;
     }
 
     function isValidStakes(address _who, uint256 _stake) internal view returns (bool) {

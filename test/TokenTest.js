@@ -65,7 +65,7 @@ contract('Token', async (accounts) => {
             ethutil.bufferToHex(rsv.s).slice(2),
             ethutil.bufferToHex(rsv.v).slice(2)
         ].join('')
-        console.log(sig)
+        //console.log(sig)
         let transfer = await token.transferMetaTx(
             from,
             to,
@@ -78,4 +78,90 @@ contract('Token', async (accounts) => {
                 gasPrice: gasPrice
             });
     });
-});
+    it('Contract paused', async () => {
+        let decimals = 18
+        let mintValue = web3.utils.toWei(new BN('40000'), 'ether')
+        let token = await Token.new("Test token", "TKG", decimals, mintValue)
+
+        let from = accounts[0];
+
+        let balanceFrom = await token.balanceOf(from);
+
+        assert.equal(balanceFrom.toString(), mintValue.toString());
+
+        await token.setPaused(true)
+
+        let to = accounts[1];
+        let amount = web3.utils.toWei(new BN('20'), 'ether')
+
+        await token.transfer(to, amount, {
+            from: from
+        }).catch((err) => {
+            assert.equal(err, "Error: Returned error: VM Exception while processing transaction: revert")
+        });
+
+        await token.approve(to, amount, {
+            from: from
+        }).catch((err) => {
+            assert.equal(err, "Error: Returned error: VM Exception while processing transaction: revert")
+        });
+
+        await token.increaseAllowance(to, amount, {
+            from: from
+        }).catch((err) => {
+            assert.equal(err, "Error: Returned error: VM Exception while processing transaction: revert")
+        });
+        await token.decreaseAllowance(to, amount, {
+            from: from
+        }).catch((err) => {
+            assert.equal(err, "Error: Returned error: VM Exception while processing transaction: revert")
+        });
+
+        await token.mint(to, amount, {
+            from: from
+        }).catch((err) => {
+            assert.equal(err, "Error: Returned error: VM Exception while processing transaction: revert")
+        });
+
+        //let to = accounts[1];
+        //let amount = web3.utils.toWei(new BN('20'), 'ether')
+        let nonce = (await token.getNonce(from)).add(new BN("1"))
+        let gasPrice = web3.utils.toWei(new BN('20'), 'Gwei').add(new BN('1'))
+        let gasLimit = web3.utils.toWei(new BN('200000'), 'wei')
+        let gasTokenPerWei = web3.utils.toWei(new BN('200'), 'wei')
+        let relayer = accounts[2];
+        let relayerkey = Buffer.from(process.env.RELAY_PRIV, 'hex')
+        let tokenReceiver = accounts[3]
+
+        let hash = await token.getTransactionHash.call(
+            from,
+            to,
+            amount,
+            [gasPrice, gasLimit, gasTokenPerWei, nonce],
+            relayer,
+            tokenReceiver
+        );
+        let message = ethutil.hashPersonalMessage(Buffer.from(hash.slice(2), 'hex'));
+        let rsv = ethutil.ecsign(message, relayerkey)
+        let sig = [
+            ethutil.bufferToHex(rsv.r),
+            ethutil.bufferToHex(rsv.s).slice(2),
+            ethutil.bufferToHex(rsv.v).slice(2)
+        ].join('')
+        //console.log(sig)
+        await token.transferMetaTx(
+            from,
+            to,
+            amount,
+            [gasPrice, gasLimit, gasTokenPerWei, nonce],
+            relayer,
+            tokenReceiver,
+            sig, {
+                from: relayer,
+                gasPrice: gasPrice
+            }
+        ).catch((err) => {
+            assert.equal(err, "Error: Returned error: VM Exception while processing transaction: revert")
+        });
+    })
+})
