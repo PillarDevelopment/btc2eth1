@@ -46,9 +46,12 @@ contract('GovEngineTest', async (accounts) => {
         let to = gov.address
         let amount = web3.utils.toWei(new BN('20'), 'ether')
         let nonce = (await token.getNonce(from)).add(new BN("1"))
-        let gasPrice = web3.utils.toWei(new BN('20'), 'Gwei').add(new BN('1'))
+        // set gas price 2 Gwei
+        let gasPrice = web3.utils.toWei(new BN('4'), 'Gwei')
+        // set gas limit 200000
         let gasLimit = web3.utils.toWei(new BN('200000'), 'wei')
-        let gasTokenPerWei = web3.utils.toWei(new BN('200'), 'wei')
+        // set token price = 1 ether  
+        let tokenPrice = web3.utils.toWei(new BN('100'), 'finney')
         let relayer = accounts[2];
         let relayerkey = Buffer.from("1ff778cc3880932d4cbf83f1a8b2eb013b8189f4f6a787a24e22b444d59a329a", 'hex')
         let tokenReceiver = accounts[3]
@@ -57,7 +60,7 @@ contract('GovEngineTest', async (accounts) => {
             from,
             to,
             amount,
-            [gasPrice, gasLimit, gasTokenPerWei, nonce],
+            [gasPrice, gasLimit, tokenPrice, nonce],
             relayer,
             tokenReceiver
         );
@@ -73,7 +76,7 @@ contract('GovEngineTest', async (accounts) => {
             from,
             to,
             amount,
-            [gasPrice, gasLimit, gasTokenPerWei, nonce],
+            [gasPrice, gasLimit, tokenPrice, nonce],
             relayer,
             tokenReceiver,
             sig, {

@@ -33,19 +33,23 @@ contract('Token', async (accounts) => {
         let decimals = 18
         let mintValue = web3.utils.toWei(new BN('40000'), 'ether')
         let token = await Token.new("Test token", "TKG", decimals, mintValue)
-
         let from = accounts[0];
-
-        let balanceFrom = await token.balanceOf(from);
-
-        assert.equal(balanceFrom.toString(), mintValue.toString());
-
         let to = accounts[1];
+
+        let balanceTo = await token.balanceOf(to);
+
+        assert.equal(balanceTo.toString(), "0");
+
+        // sending 20 token
         let amount = web3.utils.toWei(new BN('20'), 'ether')
+        // nonce update
         let nonce = (await token.getNonce(from)).add(new BN("1"))
-        let gasPrice = web3.utils.toWei(new BN('20'), 'Gwei').add(new BN('1'))
+        // set gas price 2 Gwei
+        let gasPrice = web3.utils.toWei(new BN('4'), 'Gwei')
+        // set gas limit 200000
         let gasLimit = web3.utils.toWei(new BN('200000'), 'wei')
-        let gasTokenPerWei = web3.utils.toWei(new BN('200'), 'wei')
+        // set token price = 1 ether  
+        let tokenPrice = web3.utils.toWei(new BN('100'), 'finney')
         let relayer = accounts[2];
         let relayerkey = Buffer.from("1ff778cc3880932d4cbf83f1a8b2eb013b8189f4f6a787a24e22b444d59a329a", 'hex')
         let tokenReceiver = accounts[3]
@@ -54,7 +58,7 @@ contract('Token', async (accounts) => {
             from,
             to,
             amount,
-            [gasPrice, gasLimit, gasTokenPerWei, nonce],
+            [gasPrice, gasLimit, tokenPrice, nonce],
             relayer,
             tokenReceiver
         );
@@ -70,13 +74,16 @@ contract('Token', async (accounts) => {
             from,
             to,
             amount,
-            [gasPrice, gasLimit, gasTokenPerWei, nonce],
+            [gasPrice, gasLimit, tokenPrice, nonce],
             relayer,
             tokenReceiver,
             sig, {
                 from: relayer,
                 gasPrice: gasPrice
             });
+        let updateBalanceTo = await token.balanceOf(to);
+
+        assert.equal(balanceTo.add(amount).toString(), updateBalanceTo.toString());
     });
     it('Contract paused', async () => {
         let decimals = 18
@@ -123,21 +130,23 @@ contract('Token', async (accounts) => {
             assert.equal(err, "Error: Returned error: VM Exception while processing transaction: revert")
         });
 
-        //let to = accounts[1];
-        //let amount = web3.utils.toWei(new BN('20'), 'ether')
+        // nonce update
         let nonce = (await token.getNonce(from)).add(new BN("1"))
-        let gasPrice = web3.utils.toWei(new BN('20'), 'Gwei').add(new BN('1'))
+        // set gas price 2 Gwei
+        let gasPrice = web3.utils.toWei(new BN('4'), 'Gwei')
+        // set gas limit 200000
         let gasLimit = web3.utils.toWei(new BN('200000'), 'wei')
-        let gasTokenPerWei = web3.utils.toWei(new BN('200'), 'wei')
+        // set token price = 1 ether  
+        let tokenPrice = web3.utils.toWei(new BN('100'), 'finney')
         let relayer = accounts[2];
-        let relayerkey = Buffer.from(process.env.RELAY_PRIV, 'hex')
+        let relayerkey = Buffer.from("1ff778cc3880932d4cbf83f1a8b2eb013b8189f4f6a787a24e22b444d59a329a", 'hex')
         let tokenReceiver = accounts[3]
 
         let hash = await token.getTransactionHash.call(
             from,
             to,
             amount,
-            [gasPrice, gasLimit, gasTokenPerWei, nonce],
+            [gasPrice, gasLimit, tokenPrice, nonce],
             relayer,
             tokenReceiver
         );
@@ -153,7 +162,7 @@ contract('Token', async (accounts) => {
             from,
             to,
             amount,
-            [gasPrice, gasLimit, gasTokenPerWei, nonce],
+            [gasPrice, gasLimit, tokenPrice, nonce],
             relayer,
             tokenReceiver,
             sig, {
@@ -185,7 +194,7 @@ contract('Token', async (accounts) => {
         }).catch((err) => {
             assert.equal(err, "Error: Returned error: VM Exception while processing transaction: revert")
         });
-    
+
         let updateBalanceFrom = await token.balanceOf(from);
 
         assert.equal(balanceFrom.add(amount).toString(), updateBalanceFrom.toString());

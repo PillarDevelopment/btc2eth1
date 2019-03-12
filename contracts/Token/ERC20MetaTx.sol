@@ -15,7 +15,7 @@ contract ERC20MetaTx is Constant {
 
     mapping(address => uint) private nonces;
 
-    uint256 public sendGasCost = 20000;
+    uint256 public sendGasCost = 40000;
 
     event ExecutionFailed(bytes32 txHash);
 
@@ -23,7 +23,7 @@ contract ERC20MetaTx is Constant {
         address _from, 
         address _to,  
         uint256 _amount,  
-        uint256[4] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _gasTokenPerWei, 3 => _nonce
+        uint256[4] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _tokenPrice, 3 => _nonce
         address _relayer,
         address _tokenReceiver,
         bytes memory _sig
@@ -35,8 +35,7 @@ contract ERC20MetaTx is Constant {
         // need to give at least as much gas as requested by signer + extra to perform the call
         require(initialGas > _inputs[1] + sendGasCost, "not enought gas given");
         require(nonces[_from].add(1) == _inputs[3], "nonce out of order");
-        // safeGas = gaslimit + sendGasCost * gasprice * _gasToenPerWei 
-        uint maxFees = sendGasCost.add(_inputs[1]).mul(_inputs[0]).mul(_inputs[2]);
+        uint maxFees = sendGasCost.add(_inputs[1]).mul(1 ether).div(_inputs[2]);
         require(balanceOf(_from) >= _amount.add(maxFees), "_from not enough balance");
         // need to provide same gasPrice as requested by signer
         require(tx.gasprice == _inputs[0], "gasPrice != signer gasPrice"); 
@@ -66,8 +65,8 @@ contract ERC20MetaTx is Constant {
         } else {
             _transfer(_from, _to, _amount);
         }
-        // calculate _gasPrice * _gasTokenPerWei
-        uint256 tokenFees = ((initialGas + sendGasCost) - gasleft()) * _inputs[0] * _inputs[2]; 
+        // calculate init gas - now gas * _tokenPrice
+        uint256 tokenFees = initialGas.add(sendGasCost).sub(gasleft()).mul(_inputs[0]).mul(1 ether).div(_inputs[2]); 
         _transfer(_from, _tokenReceiver, tokenFees);   
     }
 
@@ -75,7 +74,7 @@ contract ERC20MetaTx is Constant {
         address _from, 
         address _to,  
         uint256 _amount, 
-        uint256[4] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _gasTokenPerWei, 3 => _nonce
+        uint256[4] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _tokenPrice, 3 => _nonce
         address _relayer,
         address _tokenReceiver
     )
