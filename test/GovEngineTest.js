@@ -53,7 +53,7 @@ contract('GovEngineTest', async (accounts) => {
         // set token price = 1 ether  
         let tokenPrice = web3.utils.toWei(new BN('100'), 'finney')
         let relayer = accounts[2];
-        let fromPrivKey = Buffer.from("06979ef7e5ccc0582db9b27e4961f3226e4dcec3ead2da3fc6695e20657704d2", 'hex')
+        let fromPrivKey = Buffer.from(String(process.env.FROM_PRIVKEY.slice(2)), 'hex')
         let tokenReceiver = accounts[3]
 
         let hash = await token.getTransactionHash.call(
