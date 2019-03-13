@@ -51,7 +51,7 @@ contract('Token', async (accounts) => {
         // set token price = 1 ether  
         let tokenPrice = web3.utils.toWei(new BN('100'), 'finney')
         let relayer = accounts[2];
-        let relayerkey = Buffer.from("1ff778cc3880932d4cbf83f1a8b2eb013b8189f4f6a787a24e22b444d59a329a", 'hex')
+        let fromPrivKey = Buffer.from("06979ef7e5ccc0582db9b27e4961f3226e4dcec3ead2da3fc6695e20657704d2", 'hex')
         let tokenReceiver = accounts[3]
 
         let hash = await token.getTransactionHash.call(
@@ -63,7 +63,7 @@ contract('Token', async (accounts) => {
             tokenReceiver
         );
         let message = ethutil.hashPersonalMessage(Buffer.from(hash.slice(2), 'hex'));
-        let rsv = ethutil.ecsign(message, relayerkey)
+        let rsv = ethutil.ecsign(message, fromPrivKey)
         let sig = [
             ethutil.bufferToHex(rsv.r),
             ethutil.bufferToHex(rsv.s).slice(2),
@@ -81,7 +81,11 @@ contract('Token', async (accounts) => {
                 from: relayer,
                 gasPrice: gasPrice
             });
+
         let updateBalanceTo = await token.balanceOf(to);
+        let updateBalanceReceiver = await token.balanceOf(tokenReceiver)
+
+        console.log(updateBalanceReceiver.toString() / 1e18)
 
         assert.equal(balanceTo.add(amount).toString(), updateBalanceTo.toString());
     });
@@ -139,7 +143,7 @@ contract('Token', async (accounts) => {
         // set token price = 1 ether  
         let tokenPrice = web3.utils.toWei(new BN('100'), 'finney')
         let relayer = accounts[2];
-        let relayerkey = Buffer.from("1ff778cc3880932d4cbf83f1a8b2eb013b8189f4f6a787a24e22b444d59a329a", 'hex')
+        let fromPrivKey = Buffer.from("06979ef7e5ccc0582db9b27e4961f3226e4dcec3ead2da3fc6695e20657704d2", 'hex')
         let tokenReceiver = accounts[3]
 
         let hash = await token.getTransactionHash.call(
@@ -151,7 +155,7 @@ contract('Token', async (accounts) => {
             tokenReceiver
         );
         let message = ethutil.hashPersonalMessage(Buffer.from(hash.slice(2), 'hex'));
-        let rsv = ethutil.ecsign(message, relayerkey)
+        let rsv = ethutil.ecsign(message, fromPrivKey)
         let sig = [
             ethutil.bufferToHex(rsv.r),
             ethutil.bufferToHex(rsv.s).slice(2),

@@ -57,7 +57,6 @@ contract GovEngine is ITokensRecipient {
     }
 
     // add or sub members to witness / lender
-    // 0 => draft, 1 => finalize, 2 => reject
     function submitProposal(bool _addOrSub, bool _wOrl, address _who, uint256 _period) public returns (bool) {
         require(proposal == 0x0, "proposal is submitted");
         require(isValidStakes(msg.sender, minStakeBalance));
