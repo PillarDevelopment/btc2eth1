@@ -10,6 +10,7 @@ contract GovEngine is ITokensRecipient {
 
     mapping(address => uint256) private stakes; 
     mapping(address => bool)    private locked;
+    mapping(address => bytes)   private pubkeys;
 
     address[] private voted;
 
@@ -29,6 +30,10 @@ contract GovEngine is ITokensRecipient {
         threshold = gov.totalSupply();
         minStakeBalance = 40000;
     }
+
+    function () external payable {
+        revert(); 
+    }   
 
     //ITokensRecipient callback
     function onTokenReceived(address _token, address _sender, uint256 _amount) public returns (bool) {
@@ -87,7 +92,8 @@ contract GovEngine is ITokensRecipient {
         bool _wOrl, 
         address _who, 
         uint256 _period, 
-        address _submitter
+        address _submitter,
+        bytes memory _pubkey
     ) public returns (bool) {
         bytes32 hash = keccak256(abi.encodePacked(_joinOrLeft, _wOrl, _who, _period, _submitter));
         require(hash == proposal, "proposal hash is not correct");

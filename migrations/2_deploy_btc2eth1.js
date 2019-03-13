@@ -6,7 +6,7 @@ module.exports = function (deployer, net, accounts) {
         return true
     }
     let decimals = 18
-    let mintValue = new BN(String(40000 * 10 ** decimals));
+    let mintValue = web3.utils.toWei(new BN('40000'), 'ether')
     deployer.deploy(Token, "Test token", "TKG", decimals, mintValue, {
         from: accounts[0]
     }).then(async () => {

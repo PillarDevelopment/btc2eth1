@@ -2,9 +2,10 @@ pragma solidity ^0.5.0;
 
 import "./Token/Token.sol";
 import "./Utils/SigUtil.sol";
+import "./Utils/AddressManager.sol";
 
 
-contract Btc2eth1 {
+contract Btc2eth1 is AddressManager {
 
     /**
      * message format
@@ -12,8 +13,35 @@ contract Btc2eth1 {
      */
     mapping(bytes32 => bytes32) private orderState;
     mapping(uint256 => bytes32) private wshs; // sha256 hash
+    mapping(uint256 => bytes32) private groups;
+
+    event JoinGroup(address indexed who, uint256 _groupId, bytes pubkey);
     
     Token private token;
+
+    function jonGroup(uint256 _groupId, address[] memory _members, bytes memory _pubkey) public {
+        require(AddressManager.checkUserPubkey(msg.sender, _pubkey), "address is not verified");
+        bytes32 temp = 0x0;
+        for (uint i = 0; i <= _members.length - 1; i++) {
+            temp = keccak256(abi.encodePacked(temp, _members[i]));
+        }
+        require(temp == groups[_groupId], "hash is not matched");
+        groups[_groupId] = keccak256(abi.encodePacked(temp, msg.sender));
+        emit JoinGroup(msg.sender, _groupId, _pubkey);
+    }
+
+    function updateWsh(uint256 _groupId, address[] memory _members, uint256 _index, bytes32 _wsh) public {
+        require(wshs[_groupId] == 0x0, "wsh is not 0x0");
+        bytes32 temp = 0x0;
+        for (uint i = 0; i <= _members.length - 1; i++) {
+            if (_index == i) {
+                require(msg.sender == _members[i], "msg.sender != members");
+            }
+            temp = keccak256(abi.encodePacked(temp, _members[i]));
+        }
+        require(temp == groups[_groupId], "hash is not matched");
+        wshs[_groupId] = _wsh;
+    }
     
     // not broadcasting deposit tx.
     function matchOrder(
