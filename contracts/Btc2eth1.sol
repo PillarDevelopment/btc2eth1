@@ -52,7 +52,8 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
         counts[_groupId] = 0;
     }
 
-    // htlc -> Alice pubkey & Witness secret -> refund. Expired ->  Treasury pubkey -> send to Treasury
+    // lender htlc -> Witness secret -> go to treasury. Expired -> Bob pubkey -> refund
+    // minter htlc -> bob secret 
     // signed by minter
     function attachMint(
         uint256 _groupId, 
