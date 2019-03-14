@@ -52,7 +52,7 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
         counts[_groupId] = 0;
     }
 
-    // htlc -> Alice pubkey & Witness secret -> refund. Expried -> Treasury pubkey -> send to Treasury
+    // htlc -> Alice pubkey & Witness secret -> refund. Expired ->  Treasury pubkey -> send to Treasury
     // signed by minter
     function attachMint(
         uint256 _groupId, 
@@ -149,6 +149,7 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
         uint256 _groupId,
         bytes32 _ws
     ) public {
+        require(valids[_groupId] == 0); // 0 => minted
         if (block.timestamp <= counts[_groupId]) {
             if (orders[sha256(abi.encodePacked(_ws))] == "0x10") {
                 // reset
@@ -156,6 +157,7 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
                 counts[_groupId] = 0;
             }
         } else {
+            require(wshmap[_groupId] != 0x0);
             if (orders[wshmap[_groupId]] == "0x10") {
                 // slash
                 wshmap[_groupId] = "0x40";
