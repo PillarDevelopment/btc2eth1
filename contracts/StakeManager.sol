@@ -5,7 +5,7 @@ import "./Token/ITokensRecipient.sol";
 import "./Utils/SafeMath.sol";
 
 
-contract GovEngine is ITokensRecipient {
+contract StakeManager is ITokensRecipient {
     using SafeMath for uint256;
 
     mapping(address => uint256) private stakes; 
@@ -133,10 +133,6 @@ contract GovEngine is ITokensRecipient {
         return success;
     }
 
-    function getStake(address _who) public view returns (uint256) {
-        return stakes[_who];
-    }
-
     function isValidLenderConsortium(address _who) public view returns (bool) {
         return lenderConsortium[_who];
     }
@@ -147,6 +143,18 @@ contract GovEngine is ITokensRecipient {
     
     function getGov() public view returns (address) {
         return address(gov);
+    }
+
+    function getStake(address _who) public view returns (uint256) {
+        return stakes[_who];
+    }
+
+    function getScore() public view returns (uint256) {
+        return score;
+    }
+
+    function getPeriod() public view returns (uint256) {
+        return period;
     }
 
     function isVoted(address _who) internal view returns (bool) {
@@ -176,6 +184,4 @@ contract GovEngine is ITokensRecipient {
         }
         return false;
     }
-
-
 }

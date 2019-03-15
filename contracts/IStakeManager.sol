@@ -1,12 +1,12 @@
 pragma solidity 0.5.0;
 
 /**
- * @title IGovEngine interface
+ * @title IStakeManager interface
  * @dev 
  */
 /* interface */  
 
-contract IGovEngine { 
+contract IStakeManager { 
    
     function transfer(address to, uint256 value) public returns (bool);
 

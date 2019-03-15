@@ -1,5 +1,5 @@
 const Token = artifacts.require("./Token.sol");
-const GovEngine = artifacts.require("./GovEngine.sol")
+const StakeManager = artifacts.require("./StakeManager.sol")
 const Btc2eth1 = artifacts.require("./Btc2eth1.sol")
 
 const BN = web3.utils.BN;
@@ -10,7 +10,7 @@ module.exports = function (deployer, net, accounts) {
     }
     let gov;
     let btct;
-    let ge;
+    let sm;
 
     let decimals = 18
     let mintValue = web3.utils.toWei(new BN('120000000'), 'ether')
@@ -26,12 +26,12 @@ module.exports = function (deployer, net, accounts) {
         })
     }).then((_btct) => {
         btct = _btct
-        return deployer.deploy(GovEngine, gov.address, {
+        return deployer.deploy(StakeManager, gov.address, {
             from: accounts[0]
         })
-    }).then((_ge) => {
-        ge = _ge
-        return deployer.deploy(Btc2eth1, btct.address, ge.address, {
+    }).then((_sm) => {
+        sm = _sm
+        return deployer.deploy(Btc2eth1, btct.address, sm.address, {
             from: accounts[0]
         })
     })

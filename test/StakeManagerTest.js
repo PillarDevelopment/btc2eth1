@@ -1,15 +1,15 @@
 const Token = artifacts.require('Token');
-const GovEngine = artifacts.require('GovEngine');
+const StakeManager = artifacts.require('StakeManager');
 const BN = web3.utils.BN;
 const ethutil = require('ethereumjs-util')
 
-contract('GovEngineTest', async (accounts) => {
+contract('StakeManagerTest', async (accounts) => {
     it('deposit', async () => {
         let decimals = 18
         let mintValue = web3.utils.toWei(new BN('40000'), 'ether')
         let gov = await Token.new("Test token", "GOV", decimals, mintValue)
 
-        let ge = await GovEngine.new(gov.address)
+        let sm = await StakeManasmr.new(gov.address)
 
         let from = accounts[0];
         let amount = web3.utils.toWei(new BN('20'), 'ether')
@@ -18,13 +18,13 @@ contract('GovEngineTest', async (accounts) => {
 
         assert.equal(balanceFrom.toString(), mintValue.toString());
 
-        await gov.approve(ge.address, amount)
+        await gov.approve(sm.address, amount)
 
-        await ge.deposit(amount, {
+        await sm.deposit(amount, {
             from: from
         });
 
-        let stakedBalance = await ge.getStake(from);
+        let stakedBalance = await sm.getStake(from);
         let updateBalanceFrom = await gov.balanceOf(from);
 
         assert.equal(amount.toString(), stakedBalance.toString());
@@ -35,7 +35,7 @@ contract('GovEngineTest', async (accounts) => {
         let decimals = 18
         let mintValue = web3.utils.toWei(new BN('40000'), 'ether')
         let gov = await Token.new("Test token", "GOV", decimals, mintValue)
-        let ge = await GovEngine.new(gov.address)
+        let sm = await GovEngine.new(gov.address)
 
         let from = accounts[0];
 
@@ -43,7 +43,7 @@ contract('GovEngineTest', async (accounts) => {
 
         assert.equal(balanceFrom.toString(), mintValue.toString());
 
-        let to = ge.address
+        let to = sm.address
         let amount = web3.utils.toWei(new BN('20'), 'ether')
         let nonce = (await gov.getNonce(from)).add(new BN("1"))
         // set gas price 2 Gwei
@@ -83,7 +83,7 @@ contract('GovEngineTest', async (accounts) => {
                 from: relayer,
                 gasPrice: gasPrice
             });
-        let depositFrom = await ge.getStake(from);
+        let depositFrom = await sm.getStake(from);
 
         assert.equal(depositFrom.toString(), amount);
 
@@ -93,30 +93,30 @@ contract('GovEngineTest', async (accounts) => {
         let mintValue = web3.utils.toWei(new BN('4000000'), 'ether')
         let gov = await Token.new("Test token", "GOV", decimals, mintValue)
 
-        let ge = await GovEngine.new(gov.address)
+        let sm = await GovEngine.new(gov.address)
 
         let candidate = accounts[0]
         let submitter = accounts[1]
 
         await gov.transfer(submitter, web3.utils.toWei('150000', 'ether'))
 
-        await gov.approve(ge.address, web3.utils.toWei('50000', 'ether'), {
+        await gov.approve(sm.address, web3.utils.toWei('50000', 'ether'), {
             from: candidate
         })
 
-        await ge.deposit(web3.utils.toWei('50000', 'ether'), {
+        await sm.deposit(web3.utils.toWei('50000', 'ether'), {
             from: candidate
         })
 
-        await gov.approve(ge.address, web3.utils.toWei('50000', 'ether'), {
+        await gov.approve(sm.address, web3.utils.toWei('50000', 'ether'), {
             from: submitter
         })
 
-        await ge.deposit(web3.utils.toWei('50000', 'ether'), {
+        await sm.deposit(web3.utils.toWei('50000', 'ether'), {
             from: submitter
         })
         const period = Math.floor(Date.now() / 1000)
 
-        let submit = await ge.submitProposal(true, true, candidate, period)
+        let submit = await sm.submitProposal(true, true, candidate, period)
     })
 });

@@ -5,7 +5,7 @@ import "./Utils/SafeMath.sol";
 import "./Utils/AddressManager.sol";
 import "./Token/ITokensRecipient.sol";
 import "./Token/IToken.sol";
-import "./IGovEngine.sol";
+import "./IStakeManager.sol";
 
 
 contract Btc2eth1 is AddressManager, ITokensRecipient {
@@ -21,11 +21,11 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
     event JoinGroup(address indexed who, uint256 _groupId, bytes pubkey);
     event UpdateWsh(address indexed leader, uint256 _groupId, bytes32 ipfsHash);
     IToken private btct;
-    IGovEngine private ge;
+    IStakeManager private sm;
     
-    constructor (address _btct, address _ge) public {
+    constructor (address _btct, address _onboard) public {
         btct = IToken(_btct);
-        ge = IGovEngine(_ge);
+        sm = IStakeManager(_onboard);
     }
 
     function jonWitnessGroup(
