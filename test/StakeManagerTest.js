@@ -9,7 +9,7 @@ contract('StakeManagerTest', async (accounts) => {
         let mintValue = web3.utils.toWei(new BN('40000'), 'ether')
         let gov = await Token.new("Test token", "GOV", decimals, mintValue)
 
-        let sm = await StakeManasmr.new(gov.address)
+        let sm = await StakeManager.new(gov.address)
 
         let from = accounts[0];
         let amount = web3.utils.toWei(new BN('20'), 'ether')
@@ -35,7 +35,7 @@ contract('StakeManagerTest', async (accounts) => {
         let decimals = 18
         let mintValue = web3.utils.toWei(new BN('40000'), 'ether')
         let gov = await Token.new("Test token", "GOV", decimals, mintValue)
-        let sm = await GovEngine.new(gov.address)
+        let sm = await StakeManager.new(gov.address)
 
         let from = accounts[0];
 
@@ -93,7 +93,7 @@ contract('StakeManagerTest', async (accounts) => {
         let mintValue = web3.utils.toWei(new BN('4000000'), 'ether')
         let gov = await Token.new("Test token", "GOV", decimals, mintValue)
 
-        let sm = await GovEngine.new(gov.address)
+        let sm = await StakeManager.new(gov.address)
 
         let candidate = accounts[0]
         let submitter = accounts[1]
@@ -115,7 +115,7 @@ contract('StakeManagerTest', async (accounts) => {
         await sm.deposit(web3.utils.toWei('50000', 'ether'), {
             from: submitter
         })
-        const period = Math.floor(Date.now() / 1000)
+        const period = Math.floor(Date.now() / 1000) + 604800
 
         let submit = await sm.submitProposal(true, true, candidate, period)
     })

@@ -69,6 +69,8 @@ contract StakeManager is ITokensRecipient {
         require(proposal == 0x0, "proposal is submitted");
         require(isValidStakes(msg.sender, minStakeBalance));
         require(isValidStakes(_who, minStakeBalance));
+        require(_period >= block.timestamp + 7 days, "_period < block.timestamp + 7 days");
+        require(_period <= block.timestamp + 14 days, "_period >= block.timestamp + 14 days");
         require(isFree(msg.sender));
         require(isFree(_who));
         proposal = keccak256(abi.encodePacked(_addOrSub, _wOrl, _who, _period, msg.sender));
