@@ -7,25 +7,25 @@ contract('GovEngineTest', async (accounts) => {
     it('deposit', async () => {
         let decimals = 18
         let mintValue = web3.utils.toWei(new BN('40000'), 'ether')
-        let token = await Token.new("Test token", "TKG", decimals, mintValue)
+        let gov = await Token.new("Test token", "GOV", decimals, mintValue)
 
-        let gov = await GovEngine.new(token.address)
+        let ge = await GovEngine.new(gov.address)
 
         let from = accounts[0];
         let amount = web3.utils.toWei(new BN('20'), 'ether')
 
-        let balanceFrom = await token.balanceOf(from);
+        let balanceFrom = await gov.balanceOf(from);
 
         assert.equal(balanceFrom.toString(), mintValue.toString());
 
-        await token.approve(gov.address, amount)
+        await gov.approve(ge.address, amount)
 
-        await gov.deposit(amount, {
+        await ge.deposit(amount, {
             from: from
         });
 
-        let stakedBalance = await gov.balanceOf(from);
-        let updateBalanceFrom = await token.balanceOf(from);
+        let stakedBalance = await ge.getStake(from);
+        let updateBalanceFrom = await gov.balanceOf(from);
 
         assert.equal(amount.toString(), stakedBalance.toString());
         assert.equal(balanceFrom.sub(amount).toString(), updateBalanceFrom.toString());
@@ -34,18 +34,18 @@ contract('GovEngineTest', async (accounts) => {
     it('deposit by tranferMetaTx', async () => {
         let decimals = 18
         let mintValue = web3.utils.toWei(new BN('40000'), 'ether')
-        let token = await Token.new("Test token", "TKG", decimals, mintValue)
-        let gov = await GovEngine.new(token.address)
+        let gov = await Token.new("Test token", "GOV", decimals, mintValue)
+        let ge = await GovEngine.new(gov.address)
 
         let from = accounts[0];
 
-        let balanceFrom = await token.balanceOf(from);
+        let balanceFrom = await gov.balanceOf(from);
 
         assert.equal(balanceFrom.toString(), mintValue.toString());
 
-        let to = gov.address
+        let to = ge.address
         let amount = web3.utils.toWei(new BN('20'), 'ether')
-        let nonce = (await token.getNonce(from)).add(new BN("1"))
+        let nonce = (await gov.getNonce(from)).add(new BN("1"))
         // set gas price 2 Gwei
         let gasPrice = web3.utils.toWei(new BN('4'), 'Gwei')
         // set gas limit 200000
@@ -56,7 +56,7 @@ contract('GovEngineTest', async (accounts) => {
         let fromPrivKey = Buffer.from(String(process.env.FROM_PRIVKEY.slice(2)), 'hex')
         let tokenReceiver = accounts[3]
 
-        let hash = await token.getTransactionHash.call(
+        let hash = await gov.getTransactionHash.call(
             from,
             to,
             amount,
@@ -72,7 +72,7 @@ contract('GovEngineTest', async (accounts) => {
             ethutil.bufferToHex(rsv.v).slice(2)
         ].join('')
         //console.log(sig)
-        let transfer = await token.transferMetaTx(
+        let transfer = await gov.transferMetaTx(
             from,
             to,
             amount,
@@ -83,9 +83,40 @@ contract('GovEngineTest', async (accounts) => {
                 from: relayer,
                 gasPrice: gasPrice
             });
-        let depositFrom = await gov.balanceOf(from);
+        let depositFrom = await ge.getStake(from);
 
         assert.equal(depositFrom.toString(), amount);
 
     });
+    it('submit proposal', async () => {
+        let decimals = 18
+        let mintValue = web3.utils.toWei(new BN('4000000'), 'ether')
+        let gov = await Token.new("Test token", "GOV", decimals, mintValue)
+
+        let ge = await GovEngine.new(gov.address)
+
+        let candidate = accounts[0]
+        let submitter = accounts[1]
+
+        await gov.transfer(submitter, web3.utils.toWei('150000', 'ether'))
+
+        await gov.approve(ge.address, web3.utils.toWei('50000', 'ether'), {
+            from: candidate
+        })
+
+        await ge.deposit(web3.utils.toWei('50000', 'ether'), {
+            from: candidate
+        })
+
+        await gov.approve(ge.address, web3.utils.toWei('50000', 'ether'), {
+            from: submitter
+        })
+
+        await ge.deposit(web3.utils.toWei('50000', 'ether'), {
+            from: submitter
+        })
+        const period = Math.floor(Date.now() / 1000)
+
+        let submit = await ge.submitProposal(true, true, candidate, period)
+    })
 });

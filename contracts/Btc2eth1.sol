@@ -1,9 +1,11 @@
 pragma solidity ^0.5.0;
 
-import "./Token/Token.sol";
 import "./Utils/SigUtil.sol";
+import "./Utils/SafeMath.sol";
 import "./Utils/AddressManager.sol";
 import "./Token/ITokensRecipient.sol";
+import "./Token/IToken.sol";
+import "./IGovEngine.sol";
 
 
 contract Btc2eth1 is AddressManager, ITokensRecipient {
@@ -17,16 +19,24 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
     mapping(address => uint256) private minted;
 
     event JoinGroup(address indexed who, uint256 _groupId, bytes pubkey);
+    event UpdateWsh(address indexed leader, uint256 _groupId, bytes32 ipfsHash);
+    IToken private btct;
+    IGovEngine private ge;
     
-    Token private btct;
-
-    constructor (address _btct) public {
-        btct = Token(_btct);
+    constructor (address _btct, address _ge) public {
+        btct = IToken(_btct);
+        ge = IGovEngine(_ge);
     }
 
-    function jonWitnessGroup(uint256 _groupId, address[] memory _members, bytes memory _pubkey) public {
+    function jonWitnessGroup(
+        uint256 _groupId, 
+        address[] memory _members, 
+        bytes memory _pubkey
+    ) public {
         require(AddressManager.checkUserPubkey(msg.sender, _pubkey), "address is not verified");
         require(wshmap[_groupId] == 0x0, "wsh is not 0x0");
+        require(_members.length+1 >= 3, "members count < 3");
+        require(_members.length+1 <= 12, "members count >= 12");
         bytes32 temp = 0x0;
         for (uint i = 0; i <= _members.length - 1; i++) {
             temp = keccak256(abi.encodePacked(temp, _members[i]));
@@ -36,9 +46,15 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
         emit JoinGroup(msg.sender, _groupId, _pubkey);
     }
 
-    function addWsh(uint256 _groupId, address[] memory _members, uint256 _index, bytes32 _wsh) public {
+    // witness leader submit _wsh
+    function addWsh(
+        uint256 _groupId, 
+        address[] memory _members, 
+        uint256 _index, 
+        bytes32 _wsh, 
+        bytes32 _ipfsHash
+    ) public {
         require(wshmap[_groupId] == 0x0, "wsh is 0x0");
-        require(_members.length >= 3, "members count < 3");
         bytes32 temp = 0x0;
         for (uint i = 0; i <= _members.length - 1; i++) {
             if (_index == i) {
@@ -50,6 +66,7 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
         wshmap[_groupId] = _wsh;
         valids[_groupId] = _members.length * 100;
         counts[_groupId] = 0;
+        emit UpdateWsh(msg.sender, _groupId, _ipfsHash);
     }
 
     // lender htlc -> Witness secret -> go to treasury. Expired -> Bob pubkey -> refund

@@ -10,7 +10,6 @@ contract GovEngine is ITokensRecipient {
 
     mapping(address => uint256) private stakes; 
     mapping(address => bool)    private locked;
-    mapping(address => bytes)   private pubkeys;
 
     address[] private voted;
 
@@ -25,10 +24,13 @@ contract GovEngine is ITokensRecipient {
 
     IToken private gov;
 
+
+    event SubmittedProposal(bool addOrSub, bool wOrl, address who, uint256 period);
+
     constructor(address _gov) public {
         gov = IToken(_gov);
         threshold = gov.totalSupply();
-        minStakeBalance = 40000;
+        minStakeBalance = 40000 * 10 ** uint256(gov.decimals());
     }
 
     function () external payable {
@@ -47,9 +49,10 @@ contract GovEngine is ITokensRecipient {
         return true;
     }
 
-    function deposit(uint256 _amount) public {
+    function deposit(uint256 _amount) public returns (bool) {
         gov.transferFrom(msg.sender, address(this), _amount);
         stakes[msg.sender] = stakes[msg.sender].add(_amount);
+        return true;
     }
 
     function transferOut(uint256 _amount) public {
@@ -73,6 +76,8 @@ contract GovEngine is ITokensRecipient {
         doLock(_who);
         score = threshold; // init vote score min totalsuppy of tokens.
         period = _period;
+        emit SubmittedProposal(_addOrSub, _wOrl, _who, _period);
+        return true;
     }
 
     function vote(bool _vote) public {
@@ -92,8 +97,7 @@ contract GovEngine is ITokensRecipient {
         bool _wOrl, 
         address _who, 
         uint256 _period, 
-        address _submitter,
-        bytes memory _pubkey
+        address _submitter
     ) public returns (bool) {
         bytes32 hash = keccak256(abi.encodePacked(_joinOrLeft, _wOrl, _who, _period, _submitter));
         require(hash == proposal, "proposal hash is not correct");
@@ -129,7 +133,7 @@ contract GovEngine is ITokensRecipient {
         return success;
     }
 
-    function balanceOf(address _who) public view returns (uint256) {
+    function getStake(address _who) public view returns (uint256) {
         return stakes[_who];
     }
 
@@ -139,6 +143,10 @@ contract GovEngine is ITokensRecipient {
 
     function isValidWitnessConsortium(address _who) public view returns (bool) {
         return witnessConsortium[_who];
+    }
+    
+    function getGov() public view returns (address) {
+        return address(gov);
     }
 
     function isVoted(address _who) internal view returns (bool) {
@@ -151,10 +159,7 @@ contract GovEngine is ITokensRecipient {
     }
 
     function isFree(address _who) internal view returns (bool) {
-        if (locked[_who]) {
-            return true;
-        }
-        return false;
+        return !locked[_who];
     }
 
     function doLock(address _who) internal {
@@ -171,4 +176,6 @@ contract GovEngine is ITokensRecipient {
         }
         return false;
     }
+
+
 }
