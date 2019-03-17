@@ -117,6 +117,55 @@ contract('StakeManagerTest', async (accounts) => {
         })
         const period = Math.floor(Date.now() / 1000) + 604800
 
-        let submit = await sm.submitProposal(true, true, candidate, period)
+        await sm.submitProposal(true, true, candidate, period)
+        
+        let supply = await gov.totalSupply()
+        let score = await sm.getScore()
+
+        assert.equal(supply.toString(), score.toString());
+
+    })
+    it('vote', async () => {
+        let decimals = 18
+        let mintValue = web3.utils.toWei(new BN('4000000'), 'ether')
+        let gov = await Token.new("Test token", "GOV", decimals, mintValue)
+
+        let sm = await StakeManager.new(gov.address)
+
+        let candidate = accounts[0]
+        let submitter = accounts[1]
+
+        await gov.transfer(submitter, web3.utils.toWei('150000', 'ether'))
+
+        await gov.approve(sm.address, web3.utils.toWei('50000', 'ether'), {
+            from: candidate
+        })
+
+        await sm.deposit(web3.utils.toWei('50000', 'ether'), {
+            from: candidate
+        })
+
+        await gov.approve(sm.address, web3.utils.toWei('50000', 'ether'), {
+            from: submitter
+        })
+
+        await sm.deposit(web3.utils.toWei('50000', 'ether'), {
+            from: submitter
+        })
+        const period = Math.floor(Date.now() / 1000) + 604900
+
+        await sm.submitProposal(true, true, candidate, period)
+
+        let supply = await gov.totalSupply()
+
+        let stake = await sm.getStake(candidate)
+
+        let vote = await sm.vote(true)
+
+        let score = await sm.getScore()
+
+        assert.equal(supply.add(stake).toString(), score.toString());
+
+        //console.log(vote, supply.add(stake).toString())
     })
 });

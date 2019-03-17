@@ -26,6 +26,7 @@ contract StakeManager is ITokensRecipient {
 
 
     event SubmittedProposal(bool addOrSub, bool wOrl, address who, uint256 period);
+    event Voted(address sender, bool vote, uint256 total);
 
     constructor(address _gov) public {
         gov = IToken(_gov);
@@ -82,16 +83,18 @@ contract StakeManager is ITokensRecipient {
         return true;
     }
 
-    function vote(bool _vote) public {
+    function vote(bool _vote) public returns (bool) {
         require(proposal != 0x0, "proposal is not saved");
         require(isValidStakes(msg.sender, minStakeBalance), "voter insfuffient balances");
         require(!isVoted(msg.sender), "msg.sender already submitted");
         if (_vote) {
-            score.add(stakes[msg.sender]);
+            score = score.add(stakes[msg.sender]);
         } else {
-            score.sub(stakes[msg.sender]);
+            score = score.sub(stakes[msg.sender]);
         }
         voted.push(msg.sender);
+        emit Voted(msg.sender, _vote, score);
+        return true;
     }
 
     function finalize(
@@ -160,12 +163,16 @@ contract StakeManager is ITokensRecipient {
     }
 
     function isVoted(address _who) internal view returns (bool) {
+        bool result = false;
+        if (voted.length == 0) {
+            return result;
+        }
         for (uint i = 0; i < voted.length - 1; i++) {
             if (voted[i] == _who) {
-                return true;
+                result = true;
             }
         }
-        return false;
+        return result;
     }
 
     function isFree(address _who) internal view returns (bool) {
