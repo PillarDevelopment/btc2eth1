@@ -106,10 +106,8 @@ contract StakeManager is ITokensRecipient {
     ) public returns (bool) {
         bytes32 hash = keccak256(abi.encodePacked(_joinOrLeft, _wOrl, _who, _period, _submitter));
         require(hash == proposal, "proposal hash is not correct");
+        require(block.timestamp >= _period);
         bool success;        
-        if (period <= block.timestamp) {
-            return success = false;
-        }
         // vote success
         if (score > threshold) { // agreed
             if (_joinOrLeft) {

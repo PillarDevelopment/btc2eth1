@@ -3,6 +3,23 @@ const StakeManager = artifacts.require('StakeManager');
 const BN = web3.utils.BN;
 const ethutil = require('ethereumjs-util')
 
+const jsonrpc = '2.0'
+const id = 0
+const send = (method, params = []) =>
+    web3.currentProvider.send({
+        id,
+        jsonrpc,
+        method,
+        params
+    }, (err, result) => {
+        if (err)
+            console.log(err)
+    })
+const timeTravel = async seconds => {
+    await send('evm_increaseTime', [seconds])
+    await send('evm_mine')
+}
+
 contract('StakeManagerTest', async (accounts) => {
     it('deposit', async () => {
         let decimals = 18
@@ -117,8 +134,10 @@ contract('StakeManagerTest', async (accounts) => {
         })
         const period = Math.floor(Date.now() / 1000) + 604800
 
-        await sm.submitProposal(true, true, candidate, period)
-        
+        await sm.submitProposal(true, true, candidate, period, {
+            from: submitter
+        })
+
         let supply = await gov.totalSupply()
         let score = await sm.getScore()
 
@@ -154,18 +173,85 @@ contract('StakeManagerTest', async (accounts) => {
         })
         const period = Math.floor(Date.now() / 1000) + 604900
 
-        await sm.submitProposal(true, true, candidate, period)
+        await sm.submitProposal(true, true, candidate, period, {
+            from: submitter
+        })
 
         let supply = await gov.totalSupply()
 
         let stake = await sm.getStake(candidate)
 
-        let vote = await sm.vote(true)
+        await sm.vote(true)
 
         let score = await sm.getScore()
 
         assert.equal(supply.add(stake).toString(), score.toString());
 
         //console.log(vote, supply.add(stake).toString())
+    })
+    it('finalize', async () => {
+        let decimals = 18
+        let mintValue = web3.utils.toWei(new BN('4000000'), 'ether')
+        let gov = await Token.new("Test token", "GOV", decimals, mintValue)
+
+        let sm = await StakeManager.new(gov.address)
+
+        let candidate = accounts[0]
+        let submitter = accounts[1]
+
+        await gov.transfer(submitter, web3.utils.toWei('150000', 'ether'))
+
+        await gov.approve(sm.address, web3.utils.toWei('50000', 'ether'), {
+            from: candidate
+        })
+
+        await sm.deposit(web3.utils.toWei('50000', 'ether'), {
+            from: candidate
+        })
+
+        await gov.approve(sm.address, web3.utils.toWei('50000', 'ether'), {
+            from: submitter
+        })
+
+        await sm.deposit(web3.utils.toWei('50000', 'ether'), {
+            from: submitter
+        })
+        const period = Math.floor(Date.now() / 1000) + 604900
+
+        await sm.submitProposal(true, true, candidate, period, {
+            from: submitter
+        })
+
+        let supply = await gov.totalSupply()
+
+        let stake = await sm.getStake(candidate)
+
+        await sm.vote(true)
+
+        let score = await sm.getScore()
+
+        assert.equal(supply.add(stake).toString(), score.toString());
+
+        await timeTravel(604000)
+
+        await sm.finalize(true, true, candidate, period, submitter, {
+            from: submitter
+        }).catch((err) => {
+            assert.equal(err, "Error: Returned error: VM Exception while processing transaction: revert")
+        })
+
+        await timeTravel(900)
+
+        await sm.finalize(true, true, candidate, period, submitter, {
+            from: submitter
+        })
+
+        let finalizedScore = await sm.getScore()
+
+        assert.equal(finalizedScore.toString(), "0");
+
+        let isWitness = await sm.isValidWitnessConsortium(candidate)
+
+        assert.equal(isWitness, true)
     })
 });
