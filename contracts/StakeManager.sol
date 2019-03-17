@@ -20,7 +20,8 @@ contract StakeManager is ITokensRecipient {
     uint256 private period;
     uint256 private score;
     uint256 private minStakeBalance;
-    uint256 private threshold;
+    uint256 private proposalCost;
+    uint256 private reserve;
 
     IToken private gov;
 
@@ -30,8 +31,8 @@ contract StakeManager is ITokensRecipient {
 
     constructor(address _gov) public {
         gov = IToken(_gov);
-        threshold = gov.totalSupply();
         minStakeBalance = 40000 * 10 ** uint256(gov.decimals());
+        proposalCost = 2000 * 10 ** uint256(gov.decimals());
     }
 
     function () external payable {
@@ -74,10 +75,12 @@ contract StakeManager is ITokensRecipient {
         require(_period <= block.timestamp + 14 days, "_period >= block.timestamp + 14 days");
         require(isFree(msg.sender));
         require(isFree(_who));
+        stakes[msg.sender] = stakes[msg.sender].sub(proposalCost);
+        reserve = reserve.add(proposalCost);
         proposal = keccak256(abi.encodePacked(_addOrSub, _wOrl, _who, _period, msg.sender));
         doLock(msg.sender);
         doLock(_who);
-        score = threshold; // init vote score min totalsuppy of tokens.
+        score = gov.totalSupply(); // init vote score min totalsuppy of tokens.
         period = _period;
         emit SubmittedProposal(_addOrSub, _wOrl, _who, _period);
         return true;
@@ -93,6 +96,10 @@ contract StakeManager is ITokensRecipient {
             score = score.sub(stakes[msg.sender]);
         }
         voted.push(msg.sender);
+        if (reserve >= proposalCost.div(10)) {
+            stakes[msg.sender] = stakes[msg.sender].add(proposalCost.div(10)); // add reward 1/10 of proposal cost;
+            reserve = reserve.sub(proposalCost.div(10));
+        }
         emit Voted(msg.sender, _vote, score);
         return true;
     }
@@ -109,7 +116,7 @@ contract StakeManager is ITokensRecipient {
         require(block.timestamp >= _period);
         bool success;        
         // vote success
-        if (score > threshold) { // agreed
+        if (score > gov.totalSupply()) { // agreed
             if (_joinOrLeft) {
                 if (_wOrl) {
                     witnessConsortium[_who] = true;
