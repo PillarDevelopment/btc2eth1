@@ -18,7 +18,7 @@ contract Token is ERC20MetaTx, ERC20Base {
         _name = name;
         _symbol = symbol;
         _decimals = decimals;
-        setOwner(msg.sender);
+        _setOwner(msg.sender);
         _mint(msg.sender, _value);
     }
 

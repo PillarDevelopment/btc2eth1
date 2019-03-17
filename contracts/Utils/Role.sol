@@ -20,16 +20,15 @@ contract Role {
         _;
     }
 
-    function setOwner(address _owner) public {
-        require(owner == address(0x0));
+    function getOwner() public view returns (address) {
+        return owner;
+    }
+
+    function _setOwner(address _owner) internal {
         owner = _owner;
     }
 
-    function setPaused(bool _paused) public onlyOwner {
+    function _setPaused(bool _paused) internal {
         paused = _paused;
-    }
-
-    function getOwner() public view returns (address) {
-        return owner;
     }
 }

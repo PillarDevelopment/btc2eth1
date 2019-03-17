@@ -2,13 +2,14 @@ pragma solidity ^0.5.0;
 
 import "./Utils/SigUtil.sol";
 import "./Utils/SafeMath.sol";
+import "./Utils/Role.sol";
 import "./Utils/AddressManager.sol";
 import "./Token/ITokensRecipient.sol";
 import "./Token/IToken.sol";
 import "./IStakeManager.sol";
 
 
-contract Btc2eth1 is AddressManager, ITokensRecipient {
+contract Btc2eth1 is AddressManager, ITokensRecipient, Role {
     using SafeMath for uint256;
 
     mapping(bytes32 => bytes32) private orders;
@@ -26,13 +27,14 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
     constructor (address _btct, address _onboard) public {
         btct = IToken(_btct);
         sm = IStakeManager(_onboard);
+        _setOwner(msg.sender);
     }
 
     function jonWitnessGroup(
         uint256 _groupId, 
         address[] memory _members, 
         bytes memory _pubkey
-    ) public {
+    ) public notPaused {
         require(AddressManager.checkUserPubkey(msg.sender, _pubkey), "address is not verified");
         require(wshmap[_groupId] == 0x0, "wsh is not 0x0");
         require(_members.length+1 >= 3, "members count < 3");
@@ -53,7 +55,7 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
         uint256 _index, 
         bytes32 _wsh, 
         bytes32 _ipfsHash
-    ) public {
+    ) public notPaused {
         require(wshmap[_groupId] == 0x0, "wsh is 0x0");
         bytes32 temp = 0x0;
         for (uint i = 0; i <= _members.length - 1; i++) {
@@ -79,7 +81,7 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
         uint256 _period,
         bytes32 _depositTx, 
         bytes memory _sig
-    ) public {
+    ) public notPaused {
         require(wshmap[_groupId] != 0x0, "wsh is not 0x0");
         bytes32 orderHash = SigUtil.prefixed(keccak256(abi.encodePacked(
             _groupId,
@@ -99,7 +101,7 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
         address[] memory _members, 
         uint256 _index,
         bool _isValid
-    ) public {
+    ) public notPaused {
         require(valids[_groupId] > 1);
         bytes32 temp = 0x0;
         for (uint i = 0; i <= _members.length - 1; i++) {
@@ -123,7 +125,7 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
         uint256 _satoshis,
         uint256 _period,
         bytes32 _depositTx
-    ) public {
+    ) public notPaused {
         bytes32 orderHash = SigUtil.prefixed(keccak256(abi.encodePacked(
             _groupId,
             _minter,
@@ -144,7 +146,7 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
         uint256 _satoshis,
         uint256 _period,
         bytes32 _depositTx
-    ) public {
+    ) public notPaused {
         bytes32 orderHash = SigUtil.prefixed(keccak256(abi.encodePacked(
             _groupId,
             _minter,
@@ -166,7 +168,7 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
     function refund(
         uint256 _groupId,
         bytes32 _ws
-    ) public {
+    ) public notPaused {
         require(valids[_groupId] == 0); // 0 => minted
         if (block.timestamp <= counts[_groupId]) {
             if (orders[sha256(abi.encodePacked(_ws))] == "0x10") {
@@ -183,8 +185,13 @@ contract Btc2eth1 is AddressManager, ITokensRecipient {
         }
     }
 
+    function setPaused(bool _paused) public onlyOwner {
+        super._setPaused(_paused);
+        btct.setPaused(_paused);
+    }
+
     //ITokensRecipient callback
-    function onTokenReceived(address _token, address _sender, uint256 _amount) public returns (bool) {
+    function onTokenReceived(address _token, address _sender, uint256 _amount) public notPaused returns (bool) {
         if (msg.sender != address(btct)) {
             return false;
         }

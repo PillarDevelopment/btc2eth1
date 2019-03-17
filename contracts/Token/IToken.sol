@@ -16,6 +16,10 @@ contract IToken {
 
     function mint(address _to, uint256 _amount) public returns (bool);
 
+    function setPaused(bool _paused) public returns (bool);
+
+    function setOwner(address _owner) public returns (bool);
+
     function totalSupply() public view returns (uint256);
     
     function balanceOf(address who) public view returns (uint256);

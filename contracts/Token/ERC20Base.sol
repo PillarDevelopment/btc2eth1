@@ -46,4 +46,14 @@ contract ERC20Base is ERC20, Role {
         _mint(_to, _amount);
         return true;
     }
+
+    function setOwner(address _owner) public notPaused onlyOwner returns (bool) {
+        _setOwner(_owner);
+        return true;
+    }
+
+    function setPaused(bool _paused) public onlyOwner returns (bool) {
+        _setPaused(_paused);
+        return true;
+    }
 }
