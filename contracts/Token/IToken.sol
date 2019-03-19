@@ -9,6 +9,16 @@ pragma solidity 0.5.0;
 contract IToken { 
    
     function transfer(address to, uint256 value) public returns (bool);
+    
+    function transferMetaTx(
+        address _from, 
+        address _to,  
+        uint256 _amount,  
+        uint256[4] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _tokenPrice, 3 => _nonce
+        address _relayer,
+        address _tokenReceiver,
+        bytes memory _sig
+    ) public returns (bool);
 
     function approve(address spender, uint256 value) public returns (bool);
 

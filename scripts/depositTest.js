@@ -3,7 +3,7 @@ const Token = artifacts.require('./Token.sol')
 
 module.exports = async function (callback) {
 
-    let from = process.env.FROM
+    const from = process.env.FROM
 
     const sm = await StakeManager.deployed()
 
@@ -20,4 +20,6 @@ module.exports = async function (callback) {
     let deposited = await sm.getStake(from)
 
     console.log(deposited.toString())
+
+    callback()
 }

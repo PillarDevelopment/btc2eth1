@@ -8,7 +8,7 @@ pragma solidity 0.5.0;
 
 contract IStakeManager { 
    
-    function transfer(address to, uint256 value) public returns (bool);
+    function isValidWitnessConsortium(address who) public returns (bool);
 
     function approve(address spender, uint256 value) public returns (bool);
 

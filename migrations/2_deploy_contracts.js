@@ -31,7 +31,7 @@ module.exports = function (deployer, net, accounts) {
         })
     }).then((_sm) => {
         sm = _sm
-        return deployer.deploy(Btc2eth1, btct.address, sm.address, {
+        return deployer.deploy(Btc2eth1, btct.address, sm.address, 3, {
             from: accounts[0]
         })
     })

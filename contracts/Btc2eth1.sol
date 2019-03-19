@@ -13,181 +13,161 @@ contract Btc2eth1 is AddressManager, ITokensRecipient, Role {
     using SafeMath for uint256;
 
     mapping(bytes32 => bytes32) private orders;
-    mapping(uint256 => bytes32) private wshmap; // sha256 hash
-    mapping(uint256 => bytes32) private groups;
-    mapping(uint256 => uint256) private valids;
-    mapping(uint256 => uint256) private counts;
+    mapping(bytes32 => address) private wshmap; // sha256 hash
+    mapping(bytes32 => uint256) private valids;
+    mapping(bytes32 => uint256) private counts;
     mapping(address => uint256) private minted;
+    mapping(address => bytes32) private keymap;  
 
-    event JoinGroup(address indexed who, uint256 _groupId, bytes pubkey);
-    event UpdateWsh(address indexed leader, uint256 _groupId, bytes32 ipfsHash);
+    event UpdatedWsh(address indexed leader, bytes32 wsh, bytes32 ipfsHash, bytes pubkey);
+    event Registered(address indexed sender, bytes32 ipfsHash, bytes pubkey);
+
     IToken private btct;
     IStakeManager private sm;
-    
-    constructor (address _btct, address _onboard) public {
+    uint256 private requireCount;
+
+    constructor (address _btct, address _onboard, uint256 _requireCount) public {
         btct = IToken(_btct);
         sm = IStakeManager(_onboard);
         _setOwner(msg.sender);
+        requireCount = _requireCount;
     }
 
-    function jonWitnessGroup(
-        uint256 _groupId, 
-        address[] memory _members, 
+    function register(
+        bytes32 _ipfsHash,
         bytes memory _pubkey
     ) public notPaused {
-        require(AddressManager.checkUserPubkey(msg.sender, _pubkey), "address is not verified");
-        require(wshmap[_groupId] == 0x0, "wsh is not 0x0");
-        require(_members.length+1 >= 3, "members count < 3");
-        require(_members.length+1 <= 12, "members count >= 12");
-        bytes32 temp = 0x0;
-        for (uint i = 0; i <= _members.length - 1; i++) {
-            temp = keccak256(abi.encodePacked(temp, _members[i]));
-        }
-        require(temp == groups[_groupId], "hash is not matched");
-        groups[_groupId] = keccak256(abi.encodePacked(temp, msg.sender));
-        emit JoinGroup(msg.sender, _groupId, _pubkey);
+        require(checkUserPubkey(msg.sender, _pubkey), "msg.sender is not match pubkey");
+        require(sm.isValidWitnessConsortium(msg.sender), "msg.sender != witness");
+        keymap[msg.sender] = _ipfsHash;
+        emit Registered(msg.sender, _ipfsHash, _pubkey);
     }
 
     // witness leader submit _wsh
-    function addWsh(
-        uint256 _groupId, 
-        address[] memory _members, 
-        uint256 _index, 
+    function updateWsh(
         bytes32 _wsh, 
-        bytes32 _ipfsHash
+        bytes32 _ipfsHash,
+        bytes memory _pubkey
     ) public notPaused {
-        require(wshmap[_groupId] == 0x0, "wsh is 0x0");
-        bytes32 temp = 0x0;
-        for (uint i = 0; i <= _members.length - 1; i++) {
-            if (_index == i) {
-                require(msg.sender == _members[i], "msg.sender != members");
-            }
-            temp = keccak256(abi.encodePacked(temp, _members[i]));
-        }
-        require(temp == groups[_groupId], "hash is not matched");
-        wshmap[_groupId] = _wsh;
-        valids[_groupId] = _members.length * 100;
-        counts[_groupId] = 0;
-        emit UpdateWsh(msg.sender, _groupId, _ipfsHash);
+        require(wshmap[_wsh] == address(0x0), "wsh is 0x0");
+        wshmap[_wsh] = msg.sender;
+        valids[_wsh] = requireCount * 100;
+        counts[_wsh] = 0;
+        emit UpdatedWsh(msg.sender, _wsh, _ipfsHash, _pubkey);
     }
 
     // lender htlc -> Witness secret -> go to treasury. Expired -> Bob pubkey -> refund
-    // minter htlc -> bob secret 
+    // minter htlc -> bob secret -> refund to alice, Expired ->  go to treasury
     // signed by minter
     function attachMint(
-        uint256 _groupId, 
+        bytes32 _wsh, 
         address _minter, 
         uint256 _satoshis,
         uint256 _period,
         bytes32 _depositTx, 
         bytes memory _sig
     ) public notPaused {
-        require(wshmap[_groupId] != 0x0, "wsh is not 0x0");
+        require(wshmap[_wsh] != address(0x0), "wsh is not 0x0");
         bytes32 orderHash = SigUtil.prefixed(keccak256(abi.encodePacked(
-            _groupId,
+            _wsh,
             _minter,
             _satoshis,
             _period,
             _depositTx
         )));
-        require(orders[wshmap[_groupId]] == 0x0, "wsh is already used");
+        require(orders[_wsh] == 0x0, "wsh is already used");
         address signer = SigUtil.recover(orderHash, _sig);
         require(signer == _minter, "signer != _minter");
-        orders[wshmap[_groupId]] = orderHash;
+        orders[_wsh] = orderHash;
     }
 
     function validFromWitness(
-        uint256 _groupId,
-        address[] memory _members, 
-        uint256 _index,
+        bytes32 _wsh,
         bool _isValid
     ) public notPaused {
-        require(valids[_groupId] > 1);
-        bytes32 temp = 0x0;
-        for (uint i = 0; i <= _members.length - 1; i++) {
-            if (_index == i) {
-                require(msg.sender == _members[i], "msg.sender != members");
-            }
-            temp = keccak256(abi.encodePacked(temp, _members[i]));
-        }
-        require(temp == groups[_groupId], "hash is not matched");
+        require(valids[_wsh] > 1);
+
         if (_isValid) {
-            counts[_groupId] = counts[_groupId] + 100;  
+            counts[_wsh] = counts[_wsh] + 100;  
         }
-        if (counts[_groupId] >= valids[_groupId] * 2/3) {
-            valids[_groupId] = 1;
+        if (counts[_wsh] >= valids[_wsh] * 2/3) {
+            valids[_wsh] = 1;
         }
     }
 
     function execMint(
-        uint256 _groupId, 
+        bytes32 _wsh, 
         address _minter, 
         uint256 _satoshis,
         uint256 _period,
         bytes32 _depositTx
     ) public notPaused {
         bytes32 orderHash = SigUtil.prefixed(keccak256(abi.encodePacked(
-            _groupId,
+            _wsh,
             _minter,
             _satoshis,
             _period,
             _depositTx
         )));
-        require(orders[wshmap[_groupId]] == orderHash);
-        require(valids[_groupId] == 1);
+        require(orders[_wsh] == orderHash);
+        require(valids[_wsh] == 1);
 
         btct.mint(_minter, _satoshis);
-        valids[_groupId] = 0;
+        valids[_wsh] = 0;
     }
 
     function execBurn(
-        uint256 _groupId, 
+        bytes32 _wsh, 
         address _minter, 
         uint256 _satoshis,
         uint256 _period,
         bytes32 _depositTx
     ) public notPaused {
         bytes32 orderHash = SigUtil.prefixed(keccak256(abi.encodePacked(
-            _groupId,
+            _wsh,
             _minter,
             _satoshis,
             _period,
             _depositTx
         )));
-        require(orders[wshmap[_groupId]] == orderHash);
+        require(orders[_wsh] == orderHash);
         require(minted[_minter] >= _satoshis);
         minted[_minter] = minted[_minter] - _satoshis;
         if (block.timestamp <= _period + 1 hours) {
-            orders[wshmap[_groupId]] == "0x10"; // burned by period
-            counts[_groupId] = _period;
+            orders[_wsh] == "0x10"; // burned by period
+            counts[_wsh] = _period;
         } else {
-            orders[wshmap[_groupId]] == "0x20";
+            orders[_wsh] == "0x20";
         }
     }
 
     function refund(
-        uint256 _groupId,
+        bytes32 _wsh,
         bytes32 _ws
     ) public notPaused {
-        require(valids[_groupId] == 0); // 0 => minted
-        if (block.timestamp <= counts[_groupId]) {
+        require(valids[_wsh] == 0); // 0 => minted
+        if (block.timestamp <= counts[_wsh]) {
             if (orders[sha256(abi.encodePacked(_ws))] == "0x10") {
                 // reset
-                wshmap[_groupId] = 0x0;
-                counts[_groupId] = 0;
+                wshmap[_wsh] = address(0x0);
+                counts[_wsh] = 0;
             }
         } else {
-            require(wshmap[_groupId] != 0x0);
-            if (orders[wshmap[_groupId]] == "0x10") {
+            require(wshmap[_wsh] != address(0x0));
+            if (orders[_wsh] == "0x10") {
                 // slash
-                wshmap[_groupId] = "0x40";
+                //wshmap[_wsh] = "0x40";
             }
         }
     }
 
     function setPaused(bool _paused) public onlyOwner {
-        super._setPaused(_paused);
+        _setPaused(_paused);
         btct.setPaused(_paused);
+    }
+
+    function getKey(address _who) public view returns (bytes32) {
+        return keymap[_who];
     }
 
     //ITokensRecipient callback
@@ -202,7 +182,7 @@ contract Btc2eth1 is AddressManager, ITokensRecipient, Role {
         return true;
     }
 
-    function deposit(uint256 _amount) public {
+    function deposit(uint256 _amount) public notPaused {
         btct.transferFrom(msg.sender, address(this), _amount);
         minted[msg.sender] = minted[msg.sender].add(_amount);
     }

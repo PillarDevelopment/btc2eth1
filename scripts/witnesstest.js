@@ -1,5 +1,5 @@
 const Btc2eth1 = artifacts.require('./Btc2eth1.sol')
-const GovEngine = artifacts.require('./GovEngine.sol');
+const StakeManager = artifacts.require('./StakeManager.sol');
 
 module.exports = async function (callback) {
 
