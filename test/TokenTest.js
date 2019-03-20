@@ -70,6 +70,16 @@ contract('Token', async (accounts) => {
             ethutil.bufferToHex(rsv.v).slice(2)
         ].join('')
         //console.log(sig)
+        console.log(
+            from,
+            to,
+            amount.toString(),
+            gasPrice.toString(),
+            gasLimit.toString(),
+            tokenPrice.toString(),
+            nonce.toString(),
+            relayer, tokenReceiver, hash, sig)
+
         let transfer = await token.transferMetaTx(
             from,
             to,

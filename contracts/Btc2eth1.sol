@@ -20,7 +20,7 @@ contract Btc2eth1 is AddressManager, ITokensRecipient, Role {
     mapping(address => bytes32) private keymap;  
 
     event UpdatedWsh(address indexed leader, bytes32 wsh, bytes32 ipfsHash, bytes pubkey);
-    event Registered(address indexed sender, bytes32 ipfsHash, bytes pubkey);
+    event KeepEvent(address indexed sender, bytes32 ipfsHash, bytes pubkey);
 
     IToken private btct;
     IStakeManager private sm;
@@ -33,14 +33,14 @@ contract Btc2eth1 is AddressManager, ITokensRecipient, Role {
         requireCount = _requireCount;
     }
 
-    function register(
+    function keep(
         bytes32 _ipfsHash,
         bytes memory _pubkey
     ) public notPaused {
         require(checkUserPubkey(msg.sender, _pubkey), "msg.sender is not match pubkey");
         require(sm.isValidWitnessConsortium(msg.sender), "msg.sender != witness");
         keymap[msg.sender] = _ipfsHash;
-        emit Registered(msg.sender, _ipfsHash, _pubkey);
+        emit KeepEvent(msg.sender, _ipfsHash, _pubkey);
     }
 
     // witness leader submit _wsh
