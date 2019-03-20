@@ -92,6 +92,8 @@ contract('Token', async (accounts) => {
                 gasPrice: gasPrice
             });
 
+        console.log(transfer)
+
         let updateBalanceTo = await token.balanceOf(to);
         let updateBalanceReceiver = await token.balanceOf(tokenReceiver)
 

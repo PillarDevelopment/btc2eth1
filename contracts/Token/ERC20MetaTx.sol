@@ -64,10 +64,13 @@ contract ERC20MetaTx is Constant {
             }
         } else {
             _transfer(_from, _to, _amount);
+            success = true;
         }
+        nonces[_from] = _inputs[3];
         // calculate init gas - now gas * _tokenPrice
         uint256 tokenFees = initialGas.add(sendGasCost).sub(gasleft()).mul(_inputs[0]).mul(1 ether).div(_inputs[2]); 
         _transfer(_from, _tokenReceiver, tokenFees);   
+        return success;
     }
 
     function getTransactionHash(
