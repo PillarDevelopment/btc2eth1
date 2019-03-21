@@ -40,11 +40,8 @@ contract StakeManager is ITokensRecipient {
     }   
 
     //ITokensRecipient callback
-    function onTokenReceived(address _token, address _sender, uint256 _amount) public returns (bool) {
+    function onTokenReceived(address _sender, uint256 _amount) public returns (bool) {
         if (msg.sender != address(gov)) {
-            return false;
-        }
-        if (_token != address(gov)) {
             return false;
         }
         stakes[_sender] = stakes[_sender].add(_amount);

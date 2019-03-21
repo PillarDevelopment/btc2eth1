@@ -64,8 +64,7 @@ contract Btc2eth1 is AddressManager, ITokensRecipient, Role {
         address _minter, 
         uint256 _satoshis,
         uint256 _period,
-        bytes32 _depositTx, 
-        bytes memory _sig
+        bytes32 _depositTx
     ) public notPaused {
         require(wshmap[_wsh] != address(0x0), "wsh is not 0x0");
         bytes32 orderHash = SigUtil.prefixed(keccak256(abi.encodePacked(
@@ -76,8 +75,8 @@ contract Btc2eth1 is AddressManager, ITokensRecipient, Role {
             _depositTx
         )));
         require(orders[_wsh] == 0x0, "wsh is already used");
-        address signer = SigUtil.recover(orderHash, _sig);
-        require(signer == _minter, "signer != _minter");
+        //address signer = SigUtil.recover(orderHash, _sig);
+        //equire(signer == _minter, "signer != _minter");
         orders[_wsh] = orderHash;
     }
 

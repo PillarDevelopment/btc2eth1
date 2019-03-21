@@ -7,6 +7,6 @@ pragma solidity 0.5.0;
 /* interface */  
 
 contract ITokensRecipient {
-    function onTokenReceived(address _token, address _sender, uint256 _amount) public returns (bool);
+    function onTokenReceived(address _sender, uint256 _amount) public returns (bool);
 }
 

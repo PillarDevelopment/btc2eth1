@@ -13,7 +13,8 @@ import "./ITokensRecipient.sol";
 contract ERC20MetaTx is Constant {
     using SafeMath for uint256;
 
-    mapping(address => uint) private nonces;
+    mapping(address => uint256) private nonces;
+    mapping(address => uint256) private estimateTokenPrices;
 
     uint256 public sendGasCost = 40000;
 
@@ -24,14 +25,15 @@ contract ERC20MetaTx is Constant {
         address _to,  
         uint256 _amount,  
         uint256[4] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _tokenPrice, 3 => _nonce
-        address _relayer,
-        address _tokenReceiver,
-        bytes memory _sig
+        address[2] memory _providers, // 0 => _relayer, 1 => _tokenReceiver
+        uint8   _v, 
+        bytes32 _r,
+        bytes32 _s
     ) public returns (bool) {
 
         uint256 initialGas = gasleft();
 
-        require(_relayer == address(0) || _relayer == msg.sender, "wrong relayer");
+        require(_providers[0] == address(0) || _providers[0] == msg.sender, "wrong relayer");
         // need to give at least as much gas as requested by signer + extra to perform the call
         require(initialGas > _inputs[1] + sendGasCost, "not enought gas given");
         require(nonces[_from].add(1) == _inputs[3], "nonce out of order");
@@ -45,32 +47,28 @@ contract ERC20MetaTx is Constant {
             _to,
             _amount,  
             _inputs, 
-            _relayer, 
-            _tokenReceiver
+            _providers
         ));
 
-        address signer = SigUtil.recover(txHash, _sig);
+        address signer = ecrecover(txHash, _v, _r, _s);
 
         require(signer == _from, "signer != _from");
 
-        bool success;
         if (isContract(_to)) {
             // function should be return bool (not throw)
-            success = ITokensRecipient(_to).onTokenReceived(address(this), _from, _amount);
-            if (success) {
+            if (ITokensRecipient(_to).onTokenReceived(_from, _amount)) {
                 _transfer(_from, _to, _amount);
             } else {
                 emit ExecutionFailed(txHash);
             }
         } else {
             _transfer(_from, _to, _amount);
-            success = true;
         }
         nonces[_from] = _inputs[3];
         // calculate init gas - now gas * _tokenPrice
         uint256 tokenFees = initialGas.add(sendGasCost).sub(gasleft()).mul(_inputs[0]).mul(1 ether).div(_inputs[2]); 
-        _transfer(_from, _tokenReceiver, tokenFees);   
-        return success;
+        _transfer(_from, _providers[1], tokenFees);   
+        return true;
     }
 
     function getTransactionHash(
@@ -78,8 +76,7 @@ contract ERC20MetaTx is Constant {
         address _to,  
         uint256 _amount, 
         uint256[4] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _tokenPrice, 3 => _nonce
-        address _relayer,
-        address _tokenReceiver
+        address[2] memory _providers // 0 => _relayer, 1 => _tokenReceiver
     )
         public
         pure
@@ -94,9 +91,17 @@ contract ERC20MetaTx is Constant {
             _inputs[1],
             _inputs[2],
             _inputs[3],
-            _relayer,
-            _tokenReceiver
+            _providers[0],
+            _providers[1]
         ));
+    }
+
+    function setEstimateTokenPrice(uint256 _tokenPrice) public {
+        estimateTokenPrices[msg.sender] = _tokenPrice;
+    }
+
+    function getEstimateTokenPrice(address _relayer) public view returns(uint256) {
+        return estimateTokenPrices[_relayer];
     }
     
     function getNonce(address _from) public view returns (uint256) {

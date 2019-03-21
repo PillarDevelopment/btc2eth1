@@ -78,25 +78,24 @@ contract('StakeManagerTest', async (accounts) => {
             to,
             amount,
             [gasPrice, gasLimit, tokenPrice, nonce],
-            relayer,
-            tokenReceiver
+            [relayer, tokenReceiver]
         );
         let message = ethutil.hashPersonalMessage(Buffer.from(hash.slice(2), 'hex'));
         let rsv = ethutil.ecsign(message, fromPrivKey)
-        let sig = [
-            ethutil.bufferToHex(rsv.r),
-            ethutil.bufferToHex(rsv.s).slice(2),
-            ethutil.bufferToHex(rsv.v).slice(2)
-        ].join('')
+        let v = ethutil.bufferToHex(rsv.v)
+        let r = ethutil.bufferToHex(rsv.r)
+        let s = ethutil.bufferToHex(rsv.s)
+
         //console.log(sig)
-        let transfer = await gov.transferMetaTx(
+        await gov.transferMetaTx(
             from,
             to,
             amount,
             [gasPrice, gasLimit, tokenPrice, nonce],
-            relayer,
-            tokenReceiver,
-            sig, {
+            [relayer, tokenReceiver],
+            v,
+            r,
+            s, {
                 from: relayer,
                 gasPrice: gasPrice
             });
@@ -132,7 +131,7 @@ contract('StakeManagerTest', async (accounts) => {
         await sm.deposit(web3.utils.toWei('50000', 'ether'), {
             from: submitter
         })
-        const period = Math.floor(Date.now() / 1000) + 604800
+        const period = Math.floor(Date.now() / 1000) + 604900 + 300
 
         await sm.submitProposal(true, true, candidate, period, {
             from: submitter
@@ -171,7 +170,7 @@ contract('StakeManagerTest', async (accounts) => {
         await sm.deposit(web3.utils.toWei('50000', 'ether'), {
             from: submitter
         })
-        const period = Math.floor(Date.now() / 1000) + 604900
+        const period = Math.floor(Date.now() / 1000) + 604900 + 300
 
         await sm.submitProposal(true, true, candidate, period, {
             from: submitter
@@ -216,7 +215,7 @@ contract('StakeManagerTest', async (accounts) => {
         await sm.deposit(web3.utils.toWei('50000', 'ether'), {
             from: submitter
         })
-        const period = Math.floor(Date.now() / 1000) + 604900
+        const period = Math.floor(Date.now() / 1000) + 604900 + 300
 
         await sm.submitProposal(true, true, candidate, period, {
             from: submitter
@@ -237,10 +236,10 @@ contract('StakeManagerTest', async (accounts) => {
         await sm.finalize(true, true, candidate, period, submitter, {
             from: submitter
         }).catch((err) => {
-            assert.equal(err, "Error: Returned error: VM Exception while processing transaction: revert")
+            assert.isObject(err, "correct")
         })
 
-        await timeTravel(900)
+        await timeTravel(1900)
 
         await sm.finalize(true, true, candidate, period, submitter, {
             from: submitter
