@@ -64,7 +64,7 @@ contract('Token', async (accounts) => {
         let message = ethutil.hashPersonalMessage(Buffer.from(hash.slice(2), 'hex'));
         let rsv = ethutil.ecsign(message, fromPrivKey)
 
-        let v = ethutil.bufferToHex(rsv.v)
+        let v = rsv.v
         let r = ethutil.bufferToHex(rsv.r)
         let s = ethutil.bufferToHex(rsv.s)
         //console.log(sig)
@@ -165,7 +165,7 @@ contract('Token', async (accounts) => {
         let message = ethutil.hashPersonalMessage(Buffer.from(hash.slice(2), 'hex'));
         let rsv = ethutil.ecsign(message, fromPrivKey)
 
-        let v = ethutil.bufferToHex(rsv.v)
+        let v = rsv.v
         let r = ethutil.bufferToHex(rsv.r)
         let s = ethutil.bufferToHex(rsv.s)
 
