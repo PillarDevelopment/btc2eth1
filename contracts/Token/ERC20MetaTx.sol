@@ -37,9 +37,10 @@ contract ERC20MetaTx is Constant {
         require(_relayer == address(0) || _relayer == msg.sender, "wrong relayer");
         // need to give at least as much gas as requested by signer + extra to perform the call
         require(initialGas > _inputs[1] + sendGasCost, "not enought gas given");
+        // check nonce amount
         require(nonces[_from].add(1) == _inputs[3], "nonce out of order");
-        uint maxFees = sendGasCost.add(_inputs[1]).mul(1 ether).div(_inputs[2]);
-        require(balanceOf(_from) >= _amount.add(maxFees), "_from not enough balance");
+        // calculate estimate fee
+        require(balanceOf(_from) >= _amount.add(maxFees(_inputs[0], _inputs[2])), "_from not enough balance");
         // need to provide same gasPrice as requested by signer
         require(tx.gasprice == _inputs[0], "gasPrice != signer gasPrice"); 
         
@@ -50,7 +51,7 @@ contract ERC20MetaTx is Constant {
             _inputs, 
             _relayer
         ));
-
+        
         address signer = ecrecover(txHash, _v, _r, _s);
 
         require(signer == _from, "signer != _from");
@@ -94,6 +95,10 @@ contract ERC20MetaTx is Constant {
             _inputs[3],
             _relayer
         ));
+    }
+
+    function maxFees(uint256 _gasPrice, uint256 _tokenPrice) public view returns (uint256) {
+        return sendGasCost.add(_gasPrice).mul(1 ether).div(_tokenPrice);
     }
 
     function setEstimateTokenPrice(uint256 _tokenPrice) public {

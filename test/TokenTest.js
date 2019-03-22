@@ -59,7 +59,7 @@ contract('Token', async (accounts) => {
             to,
             amount,
             [gasPrice, gasLimit, tokenPrice, nonce],
-            [relayer, tokenReceiver]
+            relayer
         );
         let message = ethutil.hashPersonalMessage(Buffer.from(hash.slice(2), 'hex'));
         let rsv = ethutil.ecsign(message, fromPrivKey)
@@ -83,10 +83,11 @@ contract('Token', async (accounts) => {
             to,
             amount,
             [gasPrice, gasLimit, tokenPrice, nonce],
-            [relayer, tokenReceiver],
+            relayer,
             v,
             r,
-            s, {
+            s,
+            tokenReceiver, {
                 from: relayer,
                 gasPrice: gasPrice
             });
@@ -160,7 +161,7 @@ contract('Token', async (accounts) => {
             to,
             amount,
             [gasPrice, gasLimit, tokenPrice, nonce],
-            [relayer, tokenReceiver]
+            relayer
         );
         let message = ethutil.hashPersonalMessage(Buffer.from(hash.slice(2), 'hex'));
         let rsv = ethutil.ecsign(message, fromPrivKey)
@@ -174,10 +175,11 @@ contract('Token', async (accounts) => {
             to,
             amount,
             [gasPrice, gasLimit, tokenPrice, nonce],
-            [relayer, tokenReceiver],
+            relayer,
             v,
             r,
-            s, {
+            s,
+            tokenReceiver, {
                 from: relayer,
                 gasPrice: gasPrice
             }
