@@ -24,15 +24,11 @@ module.exports = async function (deployer, net, accounts) {
 
         console.log('btct', btct.address)
 
-        await deployer.deploy(StakeManager, gov.address, {
-            from: accounts[0]
-        })
+        await deployer.deploy(StakeManager, gov.address)
 
-        const sm = await StakeManager.deployed()
+        //const sm = await StakeManager.deployed()
 
-        await deployer.deploy(Btc2eth1, btct.address, sm.address, 3, {
-            from: accounts[0]
-        })
+        //await deployer.deploy(Btc2eth1, btct.address, sm.address, 3, {})
 
     } catch (err) {
         console.log(err)

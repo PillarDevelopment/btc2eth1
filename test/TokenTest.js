@@ -43,7 +43,7 @@ contract('Token', async (accounts) => {
         // sending 20 token
         let amount = web3.utils.toWei(new BN('20'), 'ether')
         // nonce update
-        let nonce = (await token.getNonce(from)).add(new BN("1"))
+        let nonce = (await token.getNonce(from)).add(new BN("3"))
         // set gas price 2 Gwei
         let gasPrice = web3.utils.toWei(new BN('4'), 'Gwei')
         // set gas limit 200000
@@ -145,7 +145,7 @@ contract('Token', async (accounts) => {
         });
 
         // nonce update
-        let nonce = (await token.getNonce(from)).add(new BN("1"))
+        let nonce = (await token.getNonce(from)).add(new BN("2"))
         // set gas price 2 Gwei
         let gasPrice = web3.utils.toWei(new BN('4'), 'Gwei')
         // set gas limit 200000

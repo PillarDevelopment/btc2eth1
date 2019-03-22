@@ -46,6 +46,11 @@ contract Token is ERC20MetaTx, ERC20Base {
             _tokenReceiver
         );
     }
+
+    // orverride
+    function setEstimateTokenPrice(uint256 _tokenPrice) public notPaused returns (bool) {
+        return super.setEstimateTokenPrice(_tokenPrice);
+    }
     
     /**
      * @return the name of the token.

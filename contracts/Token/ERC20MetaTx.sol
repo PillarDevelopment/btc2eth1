@@ -97,18 +97,19 @@ contract ERC20MetaTx is Constant {
         ));
     }
 
-    function maxFees(uint256 _gasPrice, uint256 _tokenPrice) public view returns (uint256) {
-        return sendGasCost.add(_gasPrice).mul(1 ether).div(_tokenPrice);
-    }
-
-    function setEstimateTokenPrice(uint256 _tokenPrice) public {
+    function setEstimateTokenPrice(uint256 _tokenPrice) public returns (bool) {
         estimateTokenPrices[msg.sender] = _tokenPrice;
+        return true;
     }
 
     function getEstimateTokenPrice(address _relayer) public view returns(uint256) {
         return estimateTokenPrices[_relayer];
     }
-    
+
+    function maxFees(uint256 _gasPrice, uint256 _tokenPrice) public view returns (uint256) {
+        return sendGasCost.add(_gasPrice).mul(1 ether).div(_tokenPrice);
+    }
+
     function getNonce(address _from) public view returns (uint256) {
         return nonces[_from];
     }

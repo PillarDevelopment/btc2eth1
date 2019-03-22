@@ -23,6 +23,7 @@
 //
 // const fs = require('fs');
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
+var HDWalletProvider = require("truffle-hdwallet-provider");
 
 module.exports = {
   /**
@@ -53,6 +54,16 @@ module.exports = {
       port: 8545, // Standard Ethereum port (default: none)
       network_id: "*", // Any network (default: none)
     },
+
+    ropsten: {
+      // must be a thunk, otherwise truffle commands may hang in CI
+      provider: () => {
+        const mnemonic = process.env.SEED
+        const endpoint = process.env.INFURA_ENDPOINT
+        return new HDWalletProvider(mnemonic, `https://ropsten.infura.io/v3/${endpoint}`, 0, 5);
+      },
+      network_id: '3',
+    }
 
     // Another network with more advanced options...
     // advanced: {

@@ -21,6 +21,7 @@
   "homepage": "https://github.com/SwingbyProtocol/btc2eth1#readme",
   "dependencies": {
     "ethereumjs-util": "^6.1.0",
-    "keccak256": "^1.0.0"
+    "keccak256": "^1.0.0",
+    "truffle-hdwallet-provider": "^1.0.5"
   }
 }
