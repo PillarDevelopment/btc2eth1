@@ -1,4 +1,5 @@
 {
     "solidity.linter": "solhint",
+    "solidity.compileUsingLocalVersion": "0.5.1+commit.c8a2cb62.Emscripten.clang",
     "solidity.solhintRules": {}
 }
