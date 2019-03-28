@@ -7,28 +7,32 @@ pragma solidity 0.5.1;
 
 contract Role { 
     
-    address private owner;
-    bool    private paused;
+    address private _owner;
+    bool    private _paused;
 
     modifier onlyOwner {
-        require(owner == msg.sender);
+        require(_owner == msg.sender);
         _;
     }
     
     modifier notPaused {
-        require(!paused);
+        require(!_paused);
         _;
     }
 
-    function getOwner() public view returns (address) {
-        return owner;
+    function owner() public view returns (address) {
+        return _owner;
     }
 
-    function _setOwner(address _owner) internal {
-        owner = _owner;
+    function isPaused() public view returns (bool) {
+        return _paused;
     }
 
-    function _setPaused(bool _paused) internal {
-        paused = _paused;
+    function _setOwner(address newOwner) internal {
+        _owner = newOwner;
+    }
+
+    function _setPaused(bool paused) internal {
+        _paused = paused;
     }
 }

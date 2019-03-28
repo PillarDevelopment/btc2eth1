@@ -79,11 +79,8 @@ contract ERC20MetaTx is Constant {
         uint256 _amount, 
         uint256[4] memory _inputs, // 0 => _gasPrice, 1 => _gasLimit, 2 => _tokenPrice, 3 => _nonce
         address _relayer
-    )
-        public
-        pure
-        returns (bytes32)
-    {
+    ) public pure returns (bytes32) {
+        
         return keccak256(abi.encodePacked(
             SWINGBY_TX_TYPEHASH,
             _from,
@@ -116,6 +113,8 @@ contract ERC20MetaTx is Constant {
 
     function balanceOf(address who) public view returns (uint256);
 
+    function _transfer(address _from, address _to, uint256 _amount) internal;    
+    
     function isContract(address _addr) internal view returns (bool) {
         uint32 size;
         assembly {
@@ -123,8 +122,6 @@ contract ERC20MetaTx is Constant {
         }
         return (size > 0);
     }
-
-    function _transfer(address _from, address _to, uint256 _amount) internal;    
 }
 
 

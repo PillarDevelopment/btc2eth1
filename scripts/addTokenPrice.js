@@ -1,24 +1,17 @@
-const StakeManager = artifacts.require('./StakeManager.sol');
-
-
+const Token = artifacts.require('./Token.sol');
 
 module.exports = async function (callback) {
 
     let from = process.env.FROM
 
-    const sm = await StakeManager.deployed()
+    const btct = await Token.at("0x45E9932fD308346CB9157F8bF5937437Bf39BB4C")
 
-    const period = Math.floor(Date.now() / 1000) + 604900
+    const amount = web3.utils.toWei('0.1', 'ether')
 
-    const actor = process.env.ACTOR
+    let set = await btct.setEstimateTokenPrice(amount, {
+        from: from
+    })
 
-    let deposited = await sm.getStake(from)
-
-    console.log(deposited)
-
-    let voted = await sm.finalize(true, true, actor, period, from)
-
-
-    console.log(voted)
+    console.log(set)
 
 }

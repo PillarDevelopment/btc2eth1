@@ -4,7 +4,7 @@ const BN = require('bn.js');
 
 module.exports = async function (callback) {
 
-    let token = await Token.at("0x521F18B4d3c3c2Bc379d262AD70c8644A3f2A05b")
+    let token = await Token.at("0xE17A43439B750F742c7e2D675D272EE15F8BE638")
 
     let from = "0xd2330a9f6dDe4715F540D1669bf75E89a1b4FbBc"
     let to = "0x7D0344e0ee6bC3901F4b11b9d9b8D001b49872A1"
@@ -15,7 +15,7 @@ module.exports = async function (callback) {
     // sending 20 token
     let amount = web3.utils.toWei(new BN('20'), 'ether')
     // nonce update
-    let nonce = new BN("6")
+    let nonce = new BN("11")
     // set gas price 2 Gwei
     let gasPrice = web3.utils.toWei(new BN('4'), 'gwei')
     // set gas limit 200000

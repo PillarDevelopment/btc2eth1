@@ -22,28 +22,33 @@ import "../Utils/Role.sol";
 
 contract ERC20Base is ERC20, Role {
 
-    function transfer(address to, uint256 value) public notPaused returns (bool) {
-        return super.transfer(to, value);
+    function transfer(address _to, uint256 _value) public notPaused returns (bool) {
+        return super.transfer(_to, _value);
     }
 
-    function transferFrom(address from, address to, uint256 value) public notPaused returns (bool) {
-        return super.transferFrom(from, to, value);
+    function transferFrom(address _from, address _to, uint256 _value) public notPaused returns (bool) {
+        return super.transferFrom(_from, _to, _value);
     }
 
-    function approve(address spender, uint256 value) public notPaused returns (bool) {
-        return super.approve(spender, value);
+    function approve(address _spender, uint256 _value) public notPaused returns (bool) {
+        return super.approve(_spender, _value);
     }
 
-    function increaseAllowance(address spender, uint addedValue) public notPaused returns (bool success) {
-        return super.increaseAllowance(spender, addedValue);
+    function increaseAllowance(address _spender, uint _addedValue) public notPaused returns (bool success) {
+        return super.increaseAllowance(_spender, _addedValue);
     }
 
-    function decreaseAllowance(address spender, uint subtractedValue) public notPaused returns (bool success) {
-        return super.decreaseAllowance(spender, subtractedValue);
+    function decreaseAllowance(address _spender, uint _subtractedValue) public notPaused returns (bool success) {
+        return super.decreaseAllowance(_spender, _subtractedValue);
     }
 
     function mint(address _to, uint256 _amount) public notPaused onlyOwner returns (bool) {        
         _mint(_to, _amount);
+        return true;
+    }
+
+    function burn(address _to, uint256 _amount) public notPaused onlyOwner returns (bool) {        
+        _burn(_to, _amount);
         return true;
     }
 
