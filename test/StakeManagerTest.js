@@ -70,7 +70,7 @@ contract('StakeManagerTest', async (accounts) => {
         // set token price = 1 ether  
         let tokenPrice = web3.utils.toWei(new BN('100'), 'finney')
         let relayer = accounts[2];
-        let fromPrivKey = Buffer.from(String(process.env.FROM_PRIVKEY.slice(2)), 'hex')
+        let fromPrivKey = Buffer.from(String(process.env.KEY.slice(2)), 'hex')
         let tokenReceiver = accounts[3]
 
         let hash = await gov.getTransactionHash.call(
@@ -78,26 +78,29 @@ contract('StakeManagerTest', async (accounts) => {
             to,
             amount,
             [gasPrice, gasLimit, tokenPrice, nonce],
-            [relayer, tokenReceiver]
+            relayer
         );
         let message = ethutil.hashPersonalMessage(Buffer.from(hash.slice(2), 'hex'));
         let rsv = ethutil.ecsign(message, fromPrivKey)
+
         let v = rsv.v
         let r = ethutil.bufferToHex(rsv.r)
         let s = ethutil.bufferToHex(rsv.s)
-        //console.log(sig)
+
         await gov.transferMetaTx(
             from,
             to,
             amount,
             [gasPrice, gasLimit, tokenPrice, nonce],
-            [relayer, tokenReceiver],
+            relayer,
             v,
             r,
-            s, {
+            s,
+            tokenReceiver, {
                 from: relayer,
                 gasPrice: gasPrice
             });
+
         let depositFrom = await sm.getStake(from);
 
         assert.equal(depositFrom.toString(), amount);
